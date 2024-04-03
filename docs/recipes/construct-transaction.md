@@ -72,7 +72,7 @@ import { predefinedSporeConfigs } from '@spore-sdk/core';
 import { helpers, RPC } from '@ckb-lumos/lumos';
 
 // Get testnet config
-const config = predefinedSporeConfigs.Aggron4;
+const config = predefinedSporeConfigs.Testnet;
 
 // Convert TransactionSkeleton to Transaction
 const tx = helpers.createTransactionFromSkeleton(txSkeleton);

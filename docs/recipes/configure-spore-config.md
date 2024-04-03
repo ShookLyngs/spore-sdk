@@ -24,10 +24,10 @@ A SporeConfig object will have the following properties:
 
 When using the Spore SDK, developers might want to specify a SporeConfig to make actions on a target environment. The Spore SDK provides a `predefinedSporeConfigs` with mainnet/testnet predefined configurations for developers to switch to these environments faster, which contains:
 
-- `Aggron4`: A SporeConfig object containing Spore Protocol infos on CKB Testnet (Aggron4).
-- `Lina (Not presented yet)`: A SporeConfig object containing Spore Protocol infos on CKB Mainnet (Lina). Note the Spore Protocol is not on mainnet yet, therefore the option is only a placeholder, we'll update it as soon as the Spore Protocol goes on mainnet.
+- `Testnet`: A SporeConfig object containing Spore Protocol infos on CKB Testnet.
+- `Mainnet`: A SporeConfig object containing Spore Protocol infos on CKB Mainnet.
 
-The Spore SDK uses `predefinedSporeConfigs.Aggron4` as the default config.  
+The Spore SDK uses `predefinedSporeConfigs.Testnet` as the default config.  
 But for example, if you want to create a spore on mainnet instead of testnet, specify it like this:
 
 ```typescript
@@ -52,7 +52,7 @@ To use a SporeConfig without passing it everywhere:
 import { predefinedSporeConfigs, setSporeConfig, createSpore } from '@spore-sdk/core';
 
 // Setting testnet config as the global default
-setSporeConfig(predefinedSporeConfigs.Aggron4);
+setSporeConfig(predefinedSporeConfigs.Testnet);
 
 // No need to pass the config object in the props
 const result = await createSpore({
@@ -73,12 +73,12 @@ When some properties in a predefined SporeConfig is not fit for a developer, the
 import { predefinedSporeConfigs, forkSporeConfig } from '@spore-sdk/core';
 
 // The forked config is a deep clone of the original config 
-const newAggron4 = forkSporeConfig(predefinedSporeConfigs.Aggron4, {
+const newConfig = forkSporeConfig(predefinedSporeConfigs.Testnet, {
   maxTransactionSize: 100,
 });
 
 // The two configs has different maxTransactionSize values
-console.log(newAggron4.maxTransactionSize === predefinedSporeConfigs.Aggron4); // false
+console.log(newConfig.maxTransactionSize === predefinedSporeConfigs.Testnet); // false
 ```
 
 

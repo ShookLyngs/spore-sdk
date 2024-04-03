@@ -3,19 +3,12 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "lint": "prettier --check 'src/**/*.{js,jsx,ts,tsx}'",
-    "lint:fix": "prettier --write 'src/**/*.{js,jsx,ts,tsx}'"
+    "lint": "prettier --check '{apis,utils}/**/*.{js,jsx,ts,tsx}'",
+    "lint:fix": "prettier --write '{apis,utils}/**/*.{js,jsx,ts,tsx}'"
   },
   "dependencies": {
     "@spore-sdk/core": "workspace:^",
     "@spore-examples/shared": "workspace:^",
-    "@ckb-lumos/bi": "^0.21.0-next.0",
-    "@ckb-lumos/base": "^0.21.0-next.0",
-    "@ckb-lumos/lumos": "^0.21.0-next.0",
-    "@ckb-lumos/codec": "^0.21.0-next.0",
-    "@ckb-lumos/common-scripts": "^0.21.0-next.0",
-    "@ckb-lumos/config-manager": "^0.21.0-next.0",
-    "ts-node": "^10.9.1",
-    "lodash": "^4.17.21"
+    "ts-node": "^10.9.1"
   }
 }

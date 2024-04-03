@@ -3,40 +3,31 @@ import { readFileSync } from 'fs';
 import { createSpore } from '@spore-sdk/core';
 import { accounts, config } from '../utils/config';
 
-// Get local image file and return an ArrayBuffer
-export async function fetchLocalImage(src: string) {
+/**
+ * Fetch local image file as Uint8Array in Node.
+ * In browser, you can use fetch() to fetch remote image file as Uint8Array.
+ */
+export async function fetchLocalImage(src: string): Promise<Uint8Array> {
   const buffer = readFileSync(resolve(__dirname, src));
-  return new Uint8Array(buffer).buffer;
+  return new Uint8Array(buffer);
 }
 
 (async function main() {
   const { CHARLIE } = accounts;
 
-  /**
-   * The dependent cluster's ID for the new spore.
-   *
-   * Note: Cluster is totally optional for a spore,
-   * only specify it when you're creating a spore in that cluster.
-   *
-   * An on-chain cluster example, the outputs[0] in the transaction (created by CHARLIE):
-   * https://pudge.explorer.nervos.org/transaction/0x1b1c11e73413997ed3ca0743c551d543cb454c87ff089cb33b65aaea6d26e215
-   */
-  const clusterId = '0x21a30f2b2f4927dbd6fd3917990af0dbb868438f44184e84d515f9af84ae4861';
-
-  let { txSkeleton } = await createSpore({
+  const { txSkeleton, outputIndex } = await createSpore({
     data: {
-      // Specify the content's MIME type
+      /**
+       * The Spore's content type (MIME type), e.g. 'text/plain', 'image/jpeg', 'application/json', etc.
+       * You can search for the full list of MIME types on the Internet:
+       * https://www.iana.org/assignments/media-types/media-types.xhtml
+       */
       contentType: 'image/jpeg',
-      // Extra parameters of contentType
-      contentTypeParameters: {
-        // Turn on the below option if you want to create an immortal spore
-        // immortal: true,
-      },
-      // Fill in the spore's content as binary bytes,
-      // and by default, we use the `examples/shared/test.jpg` file as the content of the spore
+      /**
+       * The Spore's content, should be a BytesLike type object, e.g. Uint8Array, ArrayBuffer, etc.
+       * You can use bytifyRawString() to convert a string to Uint8Array if needed.
+       */
       content: await fetchLocalImage('../../shared/test.jpg'),
-      // fill in the spores' belonging cluster's id, totally optional
-      clusterId: clusterId,
     },
     fromInfos: [CHARLIE.address],
     toLock: CHARLIE.lock,
@@ -44,5 +35,9 @@ export async function fetchLocalImage(src: string) {
   });
 
   const hash = await CHARLIE.signAndSendTransaction(txSkeleton);
-  console.log('createSpore sent, txHash:', hash);
+  console.log('createSpore transaction sent, hash:', hash);
+  console.log('Spore output index:', outputIndex);
+
+  const sporeCell = txSkeleton.get('outputs').get(outputIndex)!;
+  console.log('Spore ID:', sporeCell.cellOutput.type!.args);
 })();

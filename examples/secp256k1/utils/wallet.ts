@@ -56,7 +56,6 @@ export function createSecp256k1Wallet(privateKey: HexString, config: SporeConfig
         }
 
         const signature = signatures.get(entry.message)!;
-
         const witness = witnesses.get(entry.index, defaultEmptyWitnessArgs);
         witnesses = witnesses.set(entry.index, updateWitnessArgs(witness, 'lock', signature));
       }
@@ -76,7 +75,6 @@ export function createSecp256k1Wallet(privateKey: HexString, config: SporeConfig
 
     // Convert to Transaction
     const tx = helpers.createTransactionFromSkeleton(txSkeleton);
-    console.log(JSON.stringify(tx, null, 2));
 
     // Send transaction
     return await rpc.sendTransaction(tx, 'passthrough');
@@ -90,4 +88,3 @@ export function createSecp256k1Wallet(privateKey: HexString, config: SporeConfig
     signAndSendTransaction,
   };
 }
-

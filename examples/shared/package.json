@@ -2,8 +2,8 @@
   "name": "@spore-examples/shared",
   "private": true,
   "scripts": {
-    "lint": "prettier --check 'src/**/*.{js,jsx,ts,tsx}'",
-    "lint:fix": "prettier --write 'src/**/*.{js,jsx,ts,tsx}'"
+    "lint": "prettier --check '*.{js,jsx,ts,tsx}'",
+    "lint:fix": "prettier --write '*.{js,jsx,ts,tsx}'"
   },
   "main": "index.ts"
 }

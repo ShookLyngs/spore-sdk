@@ -1,33 +1,40 @@
 import { BIish } from '@ckb-lumos/bi';
-import { Address, Script } from '@ckb-lumos/base';
 import { FromInfo } from '@ckb-lumos/common-scripts';
+import { Address, OutPoint, Script } from '@ckb-lumos/base';
 import { BI, Cell, helpers, HexString, Indexer } from '@ckb-lumos/lumos';
-import { getSporeConfig, SporeConfig } from '../../../config';
-import { assetTransactionSkeletonSize } from '../../../helpers';
-import { injectCapacityAndPayFee, setAbsoluteCapacityMargin } from '../../../helpers';
-import { injectNewSporeOutput, injectNewSporeIds, SporeDataProps } from '../..';
+import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
+import { injectCapacityAndPayFee, assertTransactionSkeletonSize, injectNeededCapacity } from '../../../helpers';
+import { SporeDataProps, injectNewSporeOutput, injectNewSporeIds, getClusterAgentByOutPoint } from '../..';
+import { generateCreateSporeAction, injectCommonCobuildProof } from '../../../cobuild';
 
 export async function createSpore(props: {
   data: SporeDataProps;
   toLock: Script;
   fromInfos: FromInfo[];
-  config?: SporeConfig;
   changeAddress?: Address;
-  maxTransactionSize?: number | false;
+  updateOutput?: (cell: Cell) => Cell;
   capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
-  updateOutput?(cell: Cell): Cell;
   cluster?: {
+    updateOutput?: (cell: Cell) => Cell;
     capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
     updateWitness?: HexString | ((witness: HexString) => HexString);
-    updateOutput?(cell: Cell): Cell;
   };
+  clusterAgentOutPoint?: OutPoint;
+  clusterAgent?: {
+    updateOutput?: (cell: Cell) => Cell;
+    capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
+    updateWitness?: HexString | ((witness: HexString) => HexString);
+  };
+  mutant?: {
+    paymentAmount?: (minPayment: BI, lock: Script, cell: Cell) => BIish;
+  };
+  maxTransactionSize?: number | false;
+  config?: SporeConfig;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
   outputIndex: number;
-  cluster?: {
-    inputIndex: number;
-    outputIndex: number;
-  };
+  reference: Awaited<ReturnType<typeof injectNewSporeOutput>>['reference'];
+  mutantReference: Awaited<ReturnType<typeof injectNewSporeOutput>>['mutantReference'];
 }> {
   // Env
   const config = props.config ?? getSporeConfig();
@@ -35,27 +42,30 @@ export async function createSpore(props: {
   const capacityMargin = BI.from(props.capacityMargin ?? 1_0000_0000);
   const maxTransactionSize = props.maxTransactionSize ?? config.maxTransactionSize ?? false;
 
-  // Get TransactionSkeleton
+  // TransactionSkeleton
   let txSkeleton = helpers.TransactionSkeleton({
     cellProvider: indexer,
   });
 
+  // If referencing a ClusterAgent, get it from the OutPoint
+  let clusterAgentCell: Cell | undefined;
+  if (props.clusterAgentOutPoint) {
+    clusterAgentCell = await getClusterAgentByOutPoint(props.clusterAgentOutPoint, config);
+  }
+
   // Create and inject a new spore cell, also inject cluster if exists
   const injectNewSporeResult = await injectNewSporeOutput({
+    txSkeleton,
     data: props.data,
     toLock: props.toLock,
-    capacityMargin: props.capacityMargin,
-    updateOutput(cell) {
-      if (capacityMargin.gt(0)) {
-        cell = setAbsoluteCapacityMargin(cell, capacityMargin);
-      }
-      if (props.updateOutput instanceof Function) {
-        cell = props.updateOutput(cell);
-      }
-      return cell;
-    },
+    fromInfos: props.fromInfos,
+    changeAddress: props.changeAddress,
+    updateOutput: props.updateOutput,
+    clusterAgent: props.clusterAgent,
     cluster: props.cluster,
-    txSkeleton,
+    mutant: props.mutant,
+    clusterAgentCell,
+    capacityMargin,
     config,
   });
   txSkeleton = injectNewSporeResult.txSkeleton;
@@ -63,28 +73,49 @@ export async function createSpore(props: {
   // Inject needed capacity and pay fee
   const injectCapacityAndPayFeeResult = await injectCapacityAndPayFee({
     txSkeleton,
-    changeAddress: props.changeAddress,
     fromInfos: props.fromInfos,
-    fee: BI.from(0),
+    changeAddress: props.changeAddress,
+    updateTxSkeletonAfterCollection(_txSkeleton) {
+      // Generate and inject SporeID
+      _txSkeleton = injectNewSporeIds({
+        outputIndices: [injectNewSporeResult.outputIndex],
+        txSkeleton: _txSkeleton,
+        config,
+      });
+
+      // Inject CobuildProof
+      const sporeCell = txSkeleton.get('outputs').get(injectNewSporeResult.outputIndex)!;
+      const sporeScript = getSporeScript(config, 'Spore', sporeCell.cellOutput.type!);
+      if (sporeScript.behaviors?.cobuild) {
+        const actionResult = generateCreateSporeAction({
+          txSkeleton: _txSkeleton,
+          reference: injectNewSporeResult.reference,
+          outputIndex: injectNewSporeResult.outputIndex,
+        });
+        const injectCobuildProofResult = injectCommonCobuildProof({
+          txSkeleton: _txSkeleton,
+          actions: actionResult.actions,
+        });
+        _txSkeleton = injectCobuildProofResult.txSkeleton;
+      }
+
+      return _txSkeleton;
+    },
     config,
   });
   txSkeleton = injectCapacityAndPayFeeResult.txSkeleton;
 
-  // Generate and inject spore id
-  txSkeleton = injectNewSporeIds({
-    outputIndices: [injectNewSporeResult.outputIndex],
-    txSkeleton,
-    config,
-  });
+  // TODO: If creating a clustered spore, validate the transaction
 
   // Make sure the tx size is in range (if needed)
   if (typeof maxTransactionSize === 'number') {
-    assetTransactionSkeletonSize(txSkeleton, void 0, maxTransactionSize);
+    assertTransactionSkeletonSize(txSkeleton, void 0, maxTransactionSize);
   }
 
   return {
     txSkeleton,
     outputIndex: injectNewSporeResult.outputIndex,
-    cluster: injectNewSporeResult.cluster,
+    reference: injectNewSporeResult.reference,
+    mutantReference: injectNewSporeResult.mutantReference,
   };
 }

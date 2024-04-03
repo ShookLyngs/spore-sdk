@@ -1,19 +1,19 @@
-import { transferSpore } from '@spore-sdk/core';
+import { getSporeById, transferSpore } from '@spore-sdk/core';
 import { accounts, config } from '../utils/config';
 
 (async function main() {
   const { CHARLIE, ALICE } = accounts;
 
-  let { txSkeleton } = await transferSpore({
-    outPoint: {
-      txHash: '0x4655732e3d14d733db61c437d8b714ce500e577e6b68c4b42ac3b668cc72ce1a',
-      index: '0x1',
-    },
+  const sporeCell = await getSporeById('0x<spore_id>', config);
+
+  const { txSkeleton, outputIndex } = await transferSpore({
+    outPoint: sporeCell.outPoint!,
     fromInfos: [CHARLIE.address],
     toLock: ALICE.lock,
     config,
   });
 
   const hash = await CHARLIE.signAndSendTransaction(txSkeleton);
-  console.log('transferSpore sent, txHash:', hash);
+  console.log('TransferSpore transaction sent, hash:', hash);
+  console.log('Spore output index:', outputIndex);
 })();

@@ -3,12 +3,14 @@ import { BIish } from '@ckb-lumos/bi';
 import { BI, helpers } from '@ckb-lumos/lumos';
 import { Config } from '@ckb-lumos/config-manager';
 import { Address, Script, Cell } from '@ckb-lumos/base';
-import { common, FromInfo, parseFromInfo } from '@ckb-lumos/common-scripts';
+import { common, FromInfo } from '@ckb-lumos/common-scripts';
+import { isScriptValueEquals } from './script';
+import { fromInfoToAddress } from './address';
 
 /**
  * Calculate target cell's minimal occupied capacity by lock script.
  */
-export function minimalCellCapacityByLock(lock: Script) {
+export function minimalCellCapacityByLock(lock: Script): BI {
   return helpers.minimalCellCapacityCompatible({
     cellOutput: {
       capacity: '0x0',
@@ -20,10 +22,9 @@ export function minimalCellCapacityByLock(lock: Script) {
 
 /**
  * Fix cell's minimal occupied capacity by 'helpers.minimalCellCapacityCompatible' API.
-
  * Note: this function will modify the original cell object.
  */
-export function correctCellMinimalCapacity(cell: Cell) {
+export function correctCellMinimalCapacity(cell: Cell): Cell {
   const occupiedCapacity = helpers.minimalCellCapacityCompatible(cell);
   if (!occupiedCapacity.eq(cell.cellOutput.capacity)) {
     cell.cellOutput.capacity = occupiedCapacity.toHexString();
@@ -35,7 +36,7 @@ export function correctCellMinimalCapacity(cell: Cell) {
 /**
  * Make sure the target cell has declared enough amount of capacity.
  */
-export function assetCellMinimalCapacity(cell: Cell) {
+export function assetCellMinimalCapacity(cell: Cell): void {
   const minimalCapacity = helpers.minimalCellCapacityCompatible(cell);
   if (minimalCapacity.gt(cell.cellOutput.capacity)) {
     const minimal = minimalCapacity.toString();
@@ -48,7 +49,7 @@ export function assetCellMinimalCapacity(cell: Cell) {
  * Calculate the target cell's capacity margin.
  * Could be negative if the cell's declared capacity is not enough.
  */
-export function getCellCapacityMargin(cell: Cell) {
+export function getCellCapacityMargin(cell: Cell): BI {
   const minimalCapacity = helpers.minimalCellCapacityCompatible(cell);
   return BI.from(cell.cellOutput.capacity).sub(minimalCapacity);
 }
@@ -57,7 +58,10 @@ export function getCellCapacityMargin(cell: Cell) {
  * Set absolute capacity margin for a cell.
  * The term 'absolute' means the cell's capacity will be: 'minimal capacity' + 'capacity margin'.
  */
-export function setAbsoluteCapacityMargin(cell: Cell, capacityMargin: BIish | ((cell: Cell, margin: BI) => BIish)) {
+export function setAbsoluteCapacityMargin(
+  cell: Cell,
+  capacityMargin: BIish | ((cell: Cell, margin: BI) => BIish),
+): Cell {
   cell = cloneDeep(cell);
 
   const currentMargin = getCellCapacityMargin(cell);
@@ -69,16 +73,39 @@ export function setAbsoluteCapacityMargin(cell: Cell, capacityMargin: BIish | ((
 }
 
 /**
- * Count the total containing capacity of a cells list.
+ * Count the total declared capacity in a List<Cell>.
  */
-export function getCellsTotalCapacity(cells: Cell[]) {
+export function getCellsTotalCapacity(cells: Cell[]): BI {
   return cells.reduce((sum, cell) => sum.add(cell.cellOutput.capacity), BI.from(0));
 }
 
 /**
- * Calculate the summary of capacity/length difference between inputs and outputs.
+ * The snapshot result of inputs/outputs from a Transaction.
+ * Note that both inputsRemainCapacity/outputsRemainCapacity can be negative.
  */
-export function createCapacitySnapshot(inputs: Cell[], outputs: Cell[]) {
+export interface CapacitySnapshot {
+  inputsLength: number;
+  outputsLength: number;
+  inputsCapacity: BI;
+  outputsCapacity: BI;
+  inputsRemainCapacity: BI;
+  outputsRemainCapacity: BI;
+}
+
+/**
+ * Summarize the capacity/length difference between inputs/outputs of a TransactionSkeleton.
+ * This is a sugar function of 'createCapacitySnapshot'.
+ */
+export function createCapacitySnapshotFromTransactionSkeleton(
+  txSkeleton: helpers.TransactionSkeletonType,
+): CapacitySnapshot {
+  return createCapacitySnapshot(txSkeleton.get('inputs').toArray(), txSkeleton.get('outputs').toArray());
+}
+
+/**
+ * Summarize the capacity/length difference between inputs/outputs of a Transaction.
+ */
+export function createCapacitySnapshot(inputs: Cell[], outputs: Cell[]): CapacitySnapshot {
   const inputsCapacity = getCellsTotalCapacity(inputs);
   const outputsCapacity = getCellsTotalCapacity(outputs);
   const inputsRemainCapacity = inputsCapacity.sub(outputsCapacity);
@@ -95,21 +122,19 @@ export function createCapacitySnapshot(inputs: Cell[], outputs: Cell[]) {
 }
 
 /**
- * Calculates the capacity different in Transaction.inputs and Transaction.outputs,
+ * Calculates the capacity different in inputs/outputs of a Transaction,
  * then fix the change cell's containing capacity if inputs' total capacity has any left.
  *
  * Note: normally the change cell is the last cell in Transaction.outputs,
- * but if things are different you can also provide the change cell's output index.
+ * but if things are different, you can also provide the change cell's output index.
  */
 export function correctChangeCellCapacity(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   changeOutputIndex?: number;
-}) {
+}): helpers.TransactionSkeletonType {
   let txSkeleton = props.txSkeleton;
 
-  const inputs = txSkeleton.get('inputs').toArray();
-  const outputs = txSkeleton.get('outputs').toArray();
-  const snapshot = createCapacitySnapshot(inputs, outputs);
+  const snapshot = createCapacitySnapshotFromTransactionSkeleton(txSkeleton);
 
   if (snapshot.inputsRemainCapacity.gt(0)) {
     const outputIndex = props.changeOutputIndex ?? txSkeleton.get('outputs').size - 1;
@@ -129,75 +154,88 @@ export function correctChangeCellCapacity(props: {
 }
 
 /**
- * Calculate the capacity difference between Transaction.inputs and Transaction.outputs,
+ * Calculate the capacity difference between inputs/outputs of a Transaction,
  * and see how much capacity is needed for the transaction to be constructed.
  */
 export function calculateNeededCapacity(props: {
   txSkeleton: helpers.TransactionSkeletonType;
-  fromInfo: FromInfo;
+  changeAddress: Address;
+  extraCapacity?: BIish;
   config?: Config;
-  fee?: BIish;
-}) {
+}): {
+  snapshot: CapacitySnapshot;
+  neededCapacity: BI;
+  exceedCapacity: BI;
+} {
   let txSkeleton = props.txSkeleton;
 
-  // Get snapshot of inputs/outputs
-  const inputs = txSkeleton.get('inputs').toArray();
-  const outputs = txSkeleton.get('outputs').toArray();
-  const snapshot = createCapacitySnapshot(inputs, outputs);
+  const snapshot = createCapacitySnapshotFromTransactionSkeleton(txSkeleton);
+  const changeLock = helpers.parseAddress(props.changeAddress, { config: props.config });
 
-  // If not specified a fee, will collect 1 CKB by default
-  const estimatedFee = BI.from(props.fee ?? '100000000');
-  let neededCapacity = snapshot.outputsRemainCapacity.add(estimatedFee);
+  const extraCapacity = BI.from(props.extraCapacity ?? 0);
+  const minChangeCapacity = minimalCellCapacityByLock(changeLock).add(extraCapacity);
 
-  // Calculate remain capacity
-  const remainCapacity = snapshot.inputsRemainCapacity;
-  const fromInfo = parseFromInfo(props.fromInfo, { config: props.config });
-  const minimalChangeCapacity = minimalCellCapacityByLock(fromInfo.fromScript).add(estimatedFee);
-  if (neededCapacity.lte(0) && remainCapacity.gt(0) && remainCapacity.lt(minimalChangeCapacity)) {
-    neededCapacity = minimalChangeCapacity;
+  let exceedCapacity = snapshot.inputsRemainCapacity;
+  let neededCapacity = snapshot.outputsRemainCapacity.add(extraCapacity);
+
+  // Collect one more cell if:
+  // 1. Has sufficient capacity for transaction construction
+  // 2. Has insufficient capacity for adding a change cell to Transaction.outputs
+  const sufficientForTransaction = neededCapacity.lte(0) && exceedCapacity.gt(0);
+  const insufficientForChangeCell = exceedCapacity.lt(minChangeCapacity);
+  if (sufficientForTransaction && insufficientForChangeCell) {
+    neededCapacity = minChangeCapacity;
+    exceedCapacity = BI.from(0);
+  }
+
+  if (neededCapacity.lt(0)) {
+    neededCapacity = BI.from(0);
+  }
+  if (exceedCapacity.lt(0)) {
+    exceedCapacity = BI.from(0);
   }
 
   return {
     snapshot,
-    estimatedFee,
     neededCapacity,
-    remainCapacity,
+    exceedCapacity,
   };
 }
 
 /**
  * Calculate the minimal required capacity for the transaction to be constructed,
- * and then collect ckb cells to inputs, it also fills cellDeps and witnesses.
+ * and then collect cells to inputs, it also fills cellDeps and witnesses.
  * After collecting, it will generate an output to return unused ckb.
- *
- * Note: The function also collects for estimated transaction fee.
  */
 export async function injectNeededCapacity(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   fromInfos: FromInfo[];
-  fee?: BIish;
   config?: Config;
+  extraCapacity?: BIish;
   changeAddress?: Address;
   enableDeductCapacity?: boolean;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
-  before: ReturnType<typeof createCapacitySnapshot>;
-  after?: ReturnType<typeof createCapacitySnapshot>;
+  before: CapacitySnapshot;
+  after?: CapacitySnapshot;
 }> {
   let txSkeleton = props.txSkeleton;
 
-  const changeInfo = props.changeAddress ?? props.fromInfos[0];
+  const config = props.config;
+  const changeAddress = fromInfoToAddress(props.changeAddress ?? props.fromInfos[0], config);
+
+  // Calculate needed or exceeded capacity
   const calculated = calculateNeededCapacity({
+    extraCapacity: props.extraCapacity,
+    changeAddress,
     txSkeleton,
-    fee: props.fee,
-    config: props.config,
-    fromInfo: changeInfo,
+    config,
   });
 
-  const before: ReturnType<typeof createCapacitySnapshot> = calculated.snapshot;
-  let after: ReturnType<typeof createCapacitySnapshot> | undefined;
+  const before: CapacitySnapshot = calculated.snapshot;
+  let after: CapacitySnapshot | undefined;
 
-  // collect needed capacity
+  // Collect needed capacity using `common.injectCapacity` API from lumos
   if (calculated.neededCapacity.gt(0)) {
     txSkeleton = await common.injectCapacity(
       txSkeleton,
@@ -211,32 +249,112 @@ export async function injectNeededCapacity(props: {
       },
     );
 
-    const inputs = txSkeleton.get('inputs').toArray();
-    const outputs = txSkeleton.get('outputs').toArray();
-    after = createCapacitySnapshot(inputs, outputs);
+    after = createCapacitySnapshotFromTransactionSkeleton(txSkeleton);
   }
 
-  // If no needed capacity, but has remained capacity needed to be return
-  if (calculated.neededCapacity.lte(0) && calculated.remainCapacity.gt(0)) {
-    const parsedChangeInfo = parseFromInfo(changeInfo, {
-      config: props.config,
+  // If no needed capacity, and has exceeded capacity to be return as change
+  if (calculated.neededCapacity.lte(0) && calculated.exceedCapacity.gt(0)) {
+    const returnResult = returnExceededCapacity({
+      txSkeleton,
+      changeAddress,
+      config,
     });
-    const changeCell: Cell = {
-      cellOutput: {
-        lock: parsedChangeInfo.fromScript,
-        capacity: calculated.remainCapacity.toHexString(),
-      },
-      data: '0x',
-    };
 
-    txSkeleton = txSkeleton.update('outputs', (outputs) => {
-      return outputs.push(changeCell);
-    });
+    if (returnResult.returnedChange) {
+      txSkeleton = returnResult.txSkeleton;
+    }
   }
 
   return {
     txSkeleton,
     before,
     after,
+  };
+}
+
+/**
+ * Return exceeded capacity in Transaction.inputs to Transaction.outputs as change.
+ * The strategy is:
+ * - If there is an unfixed last output with the same lock as change lock, then add the exceeded capacity to it.
+ * - If no unfixed output with the same lock as change lock was found, generate a change cell to Transaction.outputs.
+ */
+export function returnExceededCapacity(props: {
+  txSkeleton: helpers.TransactionSkeletonType;
+  changeAddress: Address;
+  config?: Config;
+}): {
+  txSkeleton: helpers.TransactionSkeletonType;
+  returnedChange: boolean;
+  createdChangeCell: boolean;
+  changeCellOutputIndex: number;
+} {
+  // Summary inputs/outputs capacity status
+  let txSkeleton = props.txSkeleton;
+  const snapshot = createCapacitySnapshotFromTransactionSkeleton(txSkeleton);
+
+  // Status
+  let returnedChange: boolean = false;
+  let createdChangeCell: boolean = false;
+  let changeCellOutputIndex: number = -1;
+
+  // If no exceeded capacity, simply end the process
+  if (snapshot.inputsRemainCapacity.lte(0)) {
+    return {
+      txSkeleton,
+      returnedChange,
+      createdChangeCell,
+      changeCellOutputIndex,
+    };
+  }
+
+  // If found any exceeded capacity
+  returnedChange = true;
+
+  const changeLock = helpers.parseAddress(props.changeAddress, {
+    config: props.config,
+  });
+
+  // Find the last unfixed output with the same lock as change lock
+  const fixedOutputs = txSkeleton
+    .get('fixedEntries')
+    .filter(({ field }) => field === 'outputs')
+    .map(({ index }) => index);
+  const matchLastOutputIndex = txSkeleton
+    .get('outputs')
+    .filter((_, index) => fixedOutputs.includes(index))
+    .findLastIndex((r) => isScriptValueEquals(r.cellOutput.lock, changeLock));
+
+  if (matchLastOutputIndex > -1) {
+    // If an unfixed output exists and its lock is the same as change lock,
+    // then add the exceeded capacity to it.
+    changeCellOutputIndex = matchLastOutputIndex;
+    txSkeleton = txSkeleton.update('outputs', (outputs) => {
+      const output = outputs.get(matchLastOutputIndex)!;
+      output.cellOutput.capacity = BI.from(output.cellOutput.capacity).add(snapshot.inputsRemainCapacity).toHexString();
+
+      return outputs.set(matchLastOutputIndex, output);
+    });
+  } else {
+    // If no unfixed output with the same lock found in the outputs,
+    // generate a change cell to Transaction.outputs.
+    createdChangeCell = true;
+    const changeCell: Cell = {
+      cellOutput: {
+        capacity: snapshot.inputsRemainCapacity.toHexString(),
+        lock: changeLock,
+      },
+      data: '0x',
+    };
+    txSkeleton = txSkeleton.update('outputs', (outputs) => {
+      changeCellOutputIndex = outputs.size;
+      return outputs.push(changeCell);
+    });
+  }
+
+  return {
+    txSkeleton,
+    returnedChange,
+    createdChangeCell,
+    changeCellOutputIndex,
   };
 }

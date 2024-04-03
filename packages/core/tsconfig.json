@@ -5,7 +5,8 @@
     "outDir": "lib",
     "rootDir": "src",
     "composite": true,
-    "noEmit": false
+    "noEmit": false,
+    "lib": ["ESNext"]
   },
   "include": ["src/**/*"],
   "exclude": ["**/lib"]

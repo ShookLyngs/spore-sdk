@@ -1,5 +1,6 @@
-import { Transaction, blockchain } from '@ckb-lumos/base';
-import { helpers } from '@ckb-lumos/lumos';
+import { Transaction, blockchain, Hash, TransactionWithStatus } from '@ckb-lumos/base';
+import { helpers, RPC } from '@ckb-lumos/lumos';
+import { retryWork, RetryWorkResult } from './retryWork';
 
 /**
  * Calculates the size of a transaction.
@@ -63,11 +64,51 @@ export function assetTransactionSize(tx: Transaction, min?: number, max?: number
  * Throw an error if the TransactionSkeleton's size (in bytes) is not as expected.
  * Expected: min < size <= max.
  */
-export function assetTransactionSkeletonSize(
+export function assertTransactionSkeletonSize(
   txSkeleton: helpers.TransactionSkeletonType,
   min?: number,
   max?: number,
 ): void {
   const tx = helpers.createTransactionFromSkeleton(txSkeleton);
   assetTransactionSize(tx, min, max);
+}
+
+/**
+ * Wait for a transaction to be committed on the blockchain.
+ * This function returns a RetryWorkResult, including detailed info like the duration of the process.
+ */
+export async function waitForTransactionRetryWork(
+  hash: Hash,
+  rpc: RPC,
+): Promise<RetryWorkResult<TransactionWithStatus>> {
+  return await retryWork({
+    getter: () => rpc.getTransaction(hash),
+    retry: 6,
+    interval({ retries }) {
+      return 1000 * Math.pow(2, retries);
+    },
+    onComplete(tx) {
+      switch (tx.txStatus.status) {
+        case 'rejected':
+          throw new Error(`Transaction rejected: ${hash}, reason: ${tx.txStatus.reason}`);
+        case 'committed':
+          return true;
+        default:
+          return false;
+      }
+    },
+  });
+}
+
+/**
+ * Wait for a transaction to be committed on the blockchain.
+ * If waited too long or the transaction is rejected, throw an error.
+ */
+export async function waitForTransaction(hash: Hash, rpc: RPC): Promise<TransactionWithStatus> {
+  const fetched = await waitForTransactionRetryWork(hash, rpc);
+  if (fetched.success) {
+    return fetched.result!;
+  } else {
+    throw new Error(`Failed to wait for transaction: ${hash}, reason: ${fetched.errors[fetched.errors.length - 1]}`);
+  }
 }

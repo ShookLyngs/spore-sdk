@@ -1,4 +1,4 @@
-import { blockchain } from '@ckb-lumos/base';
+import { blockchain, Hash } from '@ckb-lumos/base';
 import { BytesLike, molecule } from '@ckb-lumos/codec';
 import { bufferToRawString, bytifyRawString } from '../helpers';
 
@@ -13,11 +13,11 @@ export const SporeData = molecule.table(
 
 export interface RawSporeData {
   contentType: string;
-  content: Parameters<typeof SporeData.pack>[0]['content'];
-  clusterId: Parameters<typeof SporeData.pack>[0]['clusterId'];
+  content: BytesLike;
+  clusterId?: Hash;
 }
 
-export function packRawSporeData(packable: RawSporeData) {
+export function packRawSporeData(packable: RawSporeData): Uint8Array {
   return SporeData.pack({
     contentType: bytifyRawString(packable.contentType),
     content: packable.content,

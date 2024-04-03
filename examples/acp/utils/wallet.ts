@@ -8,7 +8,7 @@ import { bytes, number } from '@ckb-lumos/codec';
 export interface Secp256k1Wallet {
   lock: Script;
   address: Address;
-  createAcpLock(minCkb?: number, minUdt?: number): Script;
+  createAcpLock(props?: { minCkb?: number }): Script;
   signMessage(message: HexString): Hash;
   signTransaction(txSkeleton: helpers.TransactionSkeletonType): helpers.TransactionSkeletonType;
   signAndSendTransaction(txSkeleton: helpers.TransactionSkeletonType): Promise<Hash>;
@@ -18,7 +18,7 @@ export interface Secp256k1Wallet {
  * Create a Secp256k1Blake160 Sign-all Wallet by a private key and a SporeConfig,
  * providing lock/address, and functions sign message/transaction and send the transaction on-chain.
  *
- * Note: ACP (Anyone-can-pay) lock is also supported by the generated wallet,
+ * Note: The generated wallet also supports ACP (Anyone-can-pay) lock,
  * since the ACP lock is designed/implemented based on the Secp256k1Blake160 Sign-all lock.
  */
 export function createSecp256k1Wallet(privateKey: HexString, config: SporeConfig): Secp256k1Wallet {
@@ -40,15 +40,14 @@ export function createSecp256k1Wallet(privateKey: HexString, config: SporeConfig
 
   // Create an Anyone-can-pay lock script
   // minCkb: The minimal required digit of payment CKBytes.
-  // minUdt: The minimal required digit of payment UDT, not useful for spores/clusters.
   // Refer to: https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md
-  function createAcpLock(minCkb?: number, minUdt?: number): Script {
+  function createAcpLock(props?: { minCkb?: number }): Script {
+    const minCkb = props?.minCkb;
     const minimalCkb = minCkb !== void 0 ? bytes.hexify(number.Uint8.pack(minCkb as number)) : '';
-    const minimalUdt = minUdt !== void 0 ? bytes.hexify(number.Uint8.pack(minUdt as number)) : '';
     return {
       codeHash: AnyoneCanPay.CODE_HASH,
       hashType: AnyoneCanPay.HASH_TYPE,
-      args: `${blake160}${removeHexPrefix(minimalCkb)}${removeHexPrefix(minimalUdt)}`,
+      args: `${blake160}${removeHexPrefix(minimalCkb)}`,
     };
   }
 

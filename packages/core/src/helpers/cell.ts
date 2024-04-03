@@ -3,7 +3,9 @@ import { Config } from '@ckb-lumos/config-manager';
 import { common, FromInfo } from '@ckb-lumos/common-scripts';
 import { Hash, OutPoint, PackedSince, Script } from '@ckb-lumos/base';
 import { Cell, helpers, HexString, Indexer, RPC } from '@ckb-lumos/lumos';
+import { CKBComponents } from '@ckb-lumos/rpc/lib/types/api';
 import { ScriptId } from '../codec';
+import { isScriptValueEquals } from './script';
 
 /**
  * Find and return the first cell of target type script from CKB Indexer.
@@ -23,13 +25,18 @@ export async function getCellByType(props: { type: Script; indexer: Indexer }) {
 /**
  * A wrapper function, to get a Cell structure from RPC.getLiveCell() method.
  */
-export async function getCellWithStatusByOutPoint(props: { outPoint: OutPoint; rpc: RPC }) {
+export async function getCellWithStatusByOutPoint(props: { outPoint: OutPoint; rpc: RPC }): Promise<{
+  cell?: Cell;
+  status: CKBComponents.CellStatus;
+}> {
   const liveCell = await props.rpc.getLiveCell(props.outPoint, true);
-  const cell: Cell = {
-    cellOutput: liveCell.cell.output,
-    data: liveCell.cell.data.content,
-    outPoint: props.outPoint,
-  };
+  const cell: Cell | undefined = liveCell.cell
+    ? {
+        cellOutput: liveCell.cell.output,
+        data: liveCell.cell.data.content,
+        outPoint: props.outPoint,
+      }
+    : void 0;
 
   return {
     cell,
@@ -135,4 +142,23 @@ export function groupCells(cells: Cell[]): Record<Hash | 'null', { index: number
   }
 
   return groups;
+}
+
+export function findCellIndexByScriptFromTransactionSkeleton(props: {
+  txSkeleton: helpers.TransactionSkeletonType;
+  source: 'inputs' | 'outputs';
+  scriptName: 'lock' | 'type';
+  script: Script;
+}): number {
+  if (!['inputs', 'outputs'].includes(props.source)) {
+    throw new Error('Can only find cell from the following source: "inputs" | "outputs"');
+  }
+  if (!['lock', 'type'].includes(props.scriptName)) {
+    throw new Error('Can only find cell from the following scriptType: "lock" | "type"');
+  }
+
+  const list = props.txSkeleton.get(props.source);
+  return list.findIndex((cell) => {
+    return !!cell.cellOutput[props.scriptName] && isScriptValueEquals(cell.cellOutput[props.scriptName]!, props.script);
+  });
 }

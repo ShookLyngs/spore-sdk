@@ -1,0 +1,27 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@spore-sdk/core": "0.1.0"
+  },
+  "changesets": [
+    "early-snakes-tan",
+    "eleven-dots-own",
+    "itchy-goats-beam",
+    "itchy-plants-kick",
+    "kind-donkeys-lick",
+    "nine-bottles-report",
+    "old-oranges-invite",
+    "polite-donuts-begin",
+    "proud-phones-camp",
+    "slimy-peas-share",
+    "slow-tools-flow",
+    "small-lobsters-jam",
+    "stale-ghosts-lie",
+    "strange-forks-brake",
+    "ten-knives-join",
+    "thirty-bugs-applaud",
+    "three-cows-unite",
+    "twenty-planets-rest"
+  ]
+}

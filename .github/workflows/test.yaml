@@ -1,0 +1,83 @@
+# Test the functionality of the spore-sdk packages.
+
+name: Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  devnet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout spore-sdk
+        uses: actions/checkout@v4
+        with:
+          path: spore-sdk
+
+      - name: Checkout spore-devenv
+        uses: actions/checkout@v4
+        with:
+          repository: sporeprotocol/spore-devenv
+          path: spore-devenv
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+
+      - uses: pnpm/action-setup@v2
+        name: Install -g pnpm
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Prepare spore-devenv (contracts and stuff)
+        working-directory: spore-devenv
+        run: sh prepare.sh
+
+      - name: Start devenv services
+        working-directory: spore-devenv
+        run: npm run test:start
+
+      - name: Move generated config file to spore-sdk
+        working-directory: spore-devenv
+        run: |
+          mkdir -p ../spore-sdk/packages/core/src/__tests__/tmp
+          cp config.json ../spore-sdk/packages/core/src/__tests__/tmp
+
+      - name: Recharge capacity for accounts
+        working-directory: spore-devenv
+        run: npm run test:e2e
+        env:
+          VITE_ACCOUNT_CHARLIE: ${{ secrets.ACCOUNT_CHARLIE }}
+          VITE_ACCOUNT_ALICE: ${{ secrets.ACCOUNT_ALICE }}
+
+      - name: Prepare spore-sdk
+        working-directory: spore-sdk
+        run: pnpm install
+
+      - name: Run tests for @spore-sdk/core
+        working-directory: spore-sdk/packages/core
+        run: pnpm run test
+        env:
+          VITE_ACCOUNT_CHARLIE: ${{ secrets.ACCOUNT_CHARLIE }}
+          VITE_ACCOUNT_ALICE: ${{ secrets.ACCOUNT_ALICE }}
+          VITE_TEST_CLUSTER_V1: true
+          VITE_NETWORK: devnet

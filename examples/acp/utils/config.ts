@@ -6,7 +6,7 @@ import { createSecp256k1Wallet } from './wallet';
  * SporeConfig provides spore/cluster's detailed info like ScriptIds and CellDeps.
  * It is a necessary part for constructing spore/cluster transactions.
  */
-export const config = predefinedSporeConfigs.Aggron4;
+export const config = predefinedSporeConfigs.Testnet;
 
 /**
  * Wallets with default testing accounts for running the examples,

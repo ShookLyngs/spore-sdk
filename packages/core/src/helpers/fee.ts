@@ -1,10 +1,11 @@
-import { common, FromInfo } from '@ckb-lumos/common-scripts';
-import { Address, Transaction } from '@ckb-lumos/base';
-import { BI, helpers, RPC } from '@ckb-lumos/lumos';
 import { BIish } from '@ckb-lumos/bi';
+import { BI, helpers, RPC } from '@ckb-lumos/lumos';
+import { common, FromInfo } from '@ckb-lumos/common-scripts';
+import { Address, Header, Transaction } from '@ckb-lumos/base';
 import { getSporeConfig, SporeConfig } from '../config';
-import { createCapacitySnapshot, injectNeededCapacity } from './capacity';
-import { getTransactionSize } from './transaction';
+import { injectNeededCapacity, returnExceededCapacity } from './capacity';
+import { CapacitySnapshot, createCapacitySnapshotFromTransactionSkeleton } from './capacity';
+import { getTransactionSize, getTransactionSkeletonSize } from './transaction';
 
 /**
  * Get minimal acceptable fee rate from RPC.
@@ -16,7 +17,7 @@ export async function getMinFeeRate(rpc: RPC | string): Promise<BI> {
 }
 
 /**
- * Calculate transaction fee by transaction size and feeRate.
+ * Calculate transaction fee by transaction's byte size and feeRate.
  */
 export function calculateFee(size: number, feeRate: BIish): BI {
   const ratio = BI.from(1000);
@@ -39,33 +40,69 @@ export function calculateFeeByTransaction(tx: Transaction, feeRate: BIish): BI {
 /**
  * Calculate transaction fee by TransactionSkeleton and a specific feeRate.
  */
-export function calculateFeeByTransactionSkeleton(txSkeleton: helpers.TransactionSkeletonType, feeRate: BIish) {
+export function calculateFeeByTransactionSkeleton(txSkeleton: helpers.TransactionSkeletonType, feeRate: BIish): BI {
   const tx = helpers.createTransactionFromSkeleton(txSkeleton);
   return calculateFeeByTransaction(tx, feeRate);
 }
 
 /**
- * Pay fee by minimal acceptable fee rate from the RPC,
- * of pay fee by a manual fee rate.
+ * Pay transaction fee via a capacity collection process,
+ * using the minimal acceptable fee rate from the RPC.
  */
-export async function payFee(props: {
+export async function payFeeThroughCollection(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   fromInfos: FromInfo[];
-  config?: SporeConfig;
+  changeAddress?: Address;
   feeRate?: BIish;
+  tipHeader?: Header;
   enableDeductCapacity?: boolean;
   useLocktimeCellsFirst?: boolean;
+  updateTxSkeletonAfterCollection?: (
+    txSkeleton: helpers.TransactionSkeletonType,
+  ) => Promise<helpers.TransactionSkeletonType> | helpers.TransactionSkeletonType;
+  config?: SporeConfig;
 }): Promise<helpers.TransactionSkeletonType> {
   // Env
   const config = props.config ?? getSporeConfig();
   const feeRate = props.feeRate ?? (await getMinFeeRate(config.ckbNodeUrl));
 
-  // Use lumos common script to pay fee
-  return await common.payFeeByFeeRate(props.txSkeleton, props.fromInfos, feeRate, void 0, {
-    useLocktimeCellsFirst: props.useLocktimeCellsFirst,
-    enableDeductCapacity: props.enableDeductCapacity,
-    config: config.lumos,
-  });
+  let size = 0;
+  let newTxSkeleton = props.txSkeleton;
+
+  /**
+   * Loop the collection process until the transaction size is no longer increasing.
+   * This is to ensure that the transaction size is as small as possible.
+   */
+  let currentTransactionSize = getTransactionSkeletonSize(newTxSkeleton);
+  while (currentTransactionSize > size) {
+    size = currentTransactionSize;
+    const fee = calculateFee(size, feeRate);
+
+    newTxSkeleton = await common.injectCapacity(
+      props.txSkeleton,
+      props.fromInfos,
+      fee,
+      props.changeAddress,
+      props.tipHeader,
+      {
+        config: config.lumos,
+        enableDeductCapacity: props.enableDeductCapacity,
+        useLocktimeCellsFirst: props.useLocktimeCellsFirst,
+      },
+    );
+
+    /**
+     * When injection is made and has passed the "updateTxSkeletonUpdateCollection" function,
+     * the function will be called to update the TransactionSkeleton as needed.
+     */
+    if (props.updateTxSkeletonAfterCollection) {
+      newTxSkeleton = await props.updateTxSkeletonAfterCollection(newTxSkeleton);
+    }
+
+    currentTransactionSize = getTransactionSkeletonSize(newTxSkeleton);
+  }
+
+  return newTxSkeleton;
 }
 
 /**
@@ -107,21 +144,24 @@ export async function payFeeByOutput(props: {
 }
 
 /**
- * Inject needed amount of capacity,
- * and then pay fee by minimal acceptable fee rate or by a manual fee rate.
+ * Inject the needed amount of capacity,
+ * and then pay the transaction fee via a capacity collection process.
  */
 export async function injectCapacityAndPayFee(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   fromInfos: FromInfo[];
   config?: SporeConfig;
   feeRate?: BIish;
-  fee?: BIish;
+  extraCapacity?: BIish;
   changeAddress?: Address;
   enableDeductCapacity?: boolean;
+  updateTxSkeletonAfterCollection?: (
+    txSkeleton: helpers.TransactionSkeletonType,
+  ) => Promise<helpers.TransactionSkeletonType> | helpers.TransactionSkeletonType;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
-  before: ReturnType<typeof createCapacitySnapshot>;
-  after: ReturnType<typeof createCapacitySnapshot>;
+  before: CapacitySnapshot;
+  after: CapacitySnapshot;
 }> {
   // Env
   const config = props.config ?? getSporeConfig();
@@ -133,7 +173,7 @@ export async function injectCapacityAndPayFee(props: {
   });
 
   // Pay fee
-  const txSkeleton = await payFee({
+  const txSkeleton = await payFeeThroughCollection({
     ...props,
     txSkeleton: injectNeededCapacityResult.txSkeleton,
   });
@@ -141,6 +181,48 @@ export async function injectCapacityAndPayFee(props: {
   return {
     txSkeleton,
     before: injectNeededCapacityResult.before,
-    after: createCapacitySnapshot(txSkeleton.get('inputs').toArray(), txSkeleton.get('outputs').toArray()),
+    after: createCapacitySnapshotFromTransactionSkeleton(txSkeleton),
+  };
+}
+
+/**
+ * Return exceeded capacity (change) to the outputs and then pay fee by the change cell.
+ */
+export async function returnExceededCapacityAndPayFee(props: {
+  txSkeleton: helpers.TransactionSkeletonType;
+  changeAddress: Address;
+  config?: SporeConfig;
+}): Promise<{
+  txSkeleton: helpers.TransactionSkeletonType;
+  changeCellOutputIndex: number;
+  createdChangeCell: boolean;
+}> {
+  let txSkeleton = props.txSkeleton;
+  const config = props.config ?? getSporeConfig();
+
+  // Return exceeded (change) capacity
+  const returnExceededCapacityResult = returnExceededCapacity({
+    txSkeleton,
+    config: config.lumos,
+    changeAddress: props.changeAddress,
+  });
+  txSkeleton = returnExceededCapacityResult.txSkeleton;
+
+  // If no change was returned, throw error as it is unexpected
+  if (!returnExceededCapacityResult.returnedChange) {
+    throw new Error(`Cannot pay fee with change cell because no change was returned`);
+  }
+
+  // Pay fee by change cell in outputs
+  txSkeleton = await payFeeByOutput({
+    outputIndex: returnExceededCapacityResult.changeCellOutputIndex,
+    txSkeleton,
+    config,
+  });
+
+  return {
+    txSkeleton,
+    createdChangeCell: returnExceededCapacityResult.createdChangeCell,
+    changeCellOutputIndex: returnExceededCapacityResult.changeCellOutputIndex,
   };
 }

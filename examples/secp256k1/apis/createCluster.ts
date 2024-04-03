@@ -4,7 +4,7 @@ import { accounts, config } from '../utils/config';
 (async function main() {
   const { CHARLIE } = accounts;
 
-  let { txSkeleton } = await createCluster({
+  const { txSkeleton, outputIndex } = await createCluster({
     data: {
       name: 'Test cluster',
       description: 'Description of the cluster',
@@ -15,5 +15,9 @@ import { accounts, config } from '../utils/config';
   });
 
   const hash = await CHARLIE.signAndSendTransaction(txSkeleton);
-  console.log('createCluster sent, txHash:', hash);
+  console.log('CreateCluster transaction sent, hash:', hash);
+  console.log('Cluster output index:', outputIndex);
+
+  const clusterCell = txSkeleton.get('outputs').get(outputIndex)!;
+  console.log('Cluster ID:', clusterCell.cellOutput.type!.args);
 })();

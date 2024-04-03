@@ -1,5 +1,4 @@
 export * from './codec';
 export * from './config';
 export * from './helpers';
-export * from './extension';
 export * from './api';

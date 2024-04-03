@@ -4,14 +4,14 @@
 
 [Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) is a universal and interoperable lock script supporting various blockchains' verification methods (Bitcoin, Ethereum, EOS, etc.) and extensible for future additions. You can create private spores and clusters with it for safeguarding ownership of your assets.
 
-[Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) also supports a [compatible anyone-can-pay mode](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode), which allows you to create public clusters with the lock script and benefit from charging other users for creating spores within the public cluster. 
+Omnilock also supports a [Compatible ACP Mode](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode), which allows you to create public Clusters and benefit from charging other users for creating Spores that references the public Clusters. 
 
 Please note that [Omnilock ACP](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode) lock differs from the [Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) lock in that it does not allow the minimal CKB or UDT (User-Defined Token) payment amount to be configured as `undefined`. This means that each transaction referencing an Omnilock ACP cell should receive a certain amount of payment.
 
 ## Featured examples
 
-- [acp/createAcpCluster.ts](./acp/createAcpCluster.ts): Create a public cluster with the [Omnilock ACP](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode) lock
-- [acp/createSporeInAcpCluster.ts](./acp/createSporeInAcpCluster.ts): Create an [Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) private spore within an [Omnilock ACP](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode) lock cluster
+- [acp/createAcpCluster.ts](./acp/createAcpCluster.ts): Create a public Cluster that can be referenced by any Spore
+- [acp/createSporeWithAcpCluster.ts](./acp/createSporeWithAcpCluster.ts): Create a private Spore that references a public Cluster
 
 ## Run examples
 

@@ -18,21 +18,18 @@ These examples serve as practical guides for developers, demonstrating how to im
 
 ### [CKB Default Lock](../../examples/secp256k1)
 
-[CKB Default Lock](https://www.notion.so/cryptape/examples/secp256k1) is the most commonly used lock script on [Nervos CKB](https://www.nervos.org/), also a great starting point for beginners due to its simplicity. You can create private spores and clusters with the [CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c) for safeguarding ownership of your private assets.
+[CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c) is the most commonly used lock script on [Nervos CKB](https://www.nervos.org/), also a great starting point for beginners due to its simplicity. You can create private assets with the CKB Default Lock for safeguarding ownership of your private assets.
 
-- Create/transfer clusters with the [CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c)
-- Create/transfer/destroy spores with the [CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c)
+- [Check CKB Default Lock examples](../../examples/secp256k1)
 
 ### [Anyone-can-pay](../../examples/acp)
 
-[Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) (ACP) lock can be unlocked by anyone without signature verification and accepts any amount of CKB/UDT payment from the unlocker. You can create public clusters with the [Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) lock and benefit from charging other users for creating spores within the public cluster.
+[Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) (ACP) lock can be unlocked by anyone without signature verification and accepts any amount of CKB/UDT payment from the unlocker. You can create public clusters with the Anyone-can-pay lock and benefit from charging other users for creating spores within the public cluster.
 
-- Create public clusters with the [Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) lock
-- Create spores in public clusters with the [CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c)
+- [Check ACP examples](../../examples/acp)
 
 ### [Omnilock](../../examples/omnilock)
 
-[Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) is a universal and interoperable lock script supporting various blockchains (Bitcoin, Ethereum, EOS, etc.) verification methods and extensible for future additions. [Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) also supports a [compatible anyone-can-pay mode](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode), which allows you to create public clusters using it. You can create private/public spores and clusters with the [Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md).
+[Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) is a universal and interoperable lock script supporting various blockchains (Bitcoin, Ethereum, EOS, etc.) verification methods and extensible for future additions. Omnilock also supports a [compatible anyone-can-pay mode](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode), which allows you to create public clusters using it. You can create private/public spores and clusters with the Omnilock.
 
-- Create public clusters with the [Omnilock ACP](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md#anyone-can-pay-mode) lock
-- Create spores in public clusters with the [Omnilock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0042-omnilock/0042-omnilock.md) lock
+- [Check Omnilock examples](../../examples/omnilock)

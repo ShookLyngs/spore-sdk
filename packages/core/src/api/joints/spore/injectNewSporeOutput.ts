@@ -1,92 +1,160 @@
 import { BIish } from '@ckb-lumos/bi';
-import { Script } from '@ckb-lumos/base';
+import { FromInfo } from '@ckb-lumos/common-scripts';
 import { bytes, BytesLike } from '@ckb-lumos/codec';
-import { BI, Cell, helpers, HexString } from '@ckb-lumos/lumos';
+import { Address, PackedSince, Script } from '@ckb-lumos/base';
+import { BI, Cell, helpers, Hash, HexString } from '@ckb-lumos/lumos';
 import { addCellDep } from '@ckb-lumos/common-scripts/lib/helper';
 import { packRawSporeData } from '../../../codec';
+import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
 import { EncodableContentType, setContentTypeParameters } from '../../../helpers';
 import { correctCellMinimalCapacity, setAbsoluteCapacityMargin } from '../../../helpers';
-import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
-import { injectLiveClusterCell } from '../cluster/injectLiveClusterCell';
+import { composeInputLocks, composeOutputLocks, decodeContentType, isContentTypeValid } from '../../../helpers';
 import { getClusterById } from '../cluster/getCluster';
+import { injectLiveClusterReference } from '../cluster/injectLiveClusterReference';
+import { injectLiveClusterAgentReference } from '../clusterAgent/injectLiveClusterAgentReference';
+import { injectLiveMutantReferences } from '../mutant/injectLiveMutantReferences';
 import { injectNewSporeIds } from './injectNewSporeIds';
 
 export interface SporeDataProps {
-  /**
-   * Specify the MIME type of the content.
-   * An example: type/subtype;param1=value1;param2=value2
-   */
   contentType: string;
-  /**
-   * Additional parameters of the contentType.
-   *
-   * For example, if the contentType is "image/jpeg",
-   * and you want to use the "immortal" core extension,
-   * which requires adding an "immortal" parameter at the end of the contentType,
-   * you can then pass the following object to the contentTypeParameters:
-   * {
-   *   immortal: true,
-   * }
-   * Later on in the "createSpore" function,
-   * the contentTypeParameters will be merged into the contentType,
-   * so finally the contentType will be: "image/jpeg;immortal=true".
-   */
   contentTypeParameters?: EncodableContentType['parameters'];
-  /**
-   * The content of the NFT as bytes.
-   */
   content: BytesLike;
-  /**
-   * Cluster ID bind to the spore, optional.
-   * It should be a 32-byte hash.
-   */
-  clusterId?: HexString;
+  clusterId?: Hash;
 }
 
 export async function injectNewSporeOutput(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   data: SporeDataProps;
   toLock: Script;
-  config?: SporeConfig;
-  updateOutput?(cell: Cell): Cell;
+  fromInfos: FromInfo[];
+  changeAddress?: Address;
+  updateOutput?: (cell: Cell) => Cell;
   capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
   cluster?: {
-    updateOutput?(cell: Cell): Cell;
+    updateOutput?: (cell: Cell) => Cell;
     capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
     updateWitness?: HexString | ((witness: HexString) => HexString);
+    defaultWitness?: HexString;
+    since?: PackedSince;
   };
+  clusterAgentCell?: Cell;
+  clusterAgent?: {
+    updateOutput?: (cell: Cell) => Cell;
+    capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
+    updateWitness?: HexString | ((witness: HexString) => HexString);
+    defaultWitness?: HexString;
+    since?: PackedSince;
+  };
+  mutant?: {
+    paymentAmount?: (minPayment: BI, lock: Script, cell: Cell) => BIish;
+  };
+  config?: SporeConfig;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
   outputIndex: number;
   hasId: boolean;
-  cluster?: {
-    inputIndex: number;
-    outputIndex: number;
+  reference: {
+    referenceTarget: 'cluster' | 'clusterAgent' | 'none';
+    referenceType?: 'cell' | 'lockProxy';
+    cluster?: {
+      inputIndex: number;
+      outputIndex: number;
+    };
+    clusterAgent?: {
+      inputIndex: number;
+      outputIndex: number;
+    };
+  };
+  mutantReference?: {
+    referenceType: 'payment' | 'none';
+    payment?: {
+      outputIndices: number[];
+    };
   };
 }> {
   // Env
   const config = props.config ?? getSporeConfig();
   const sporeData = props.data;
 
-  // Get TransactionSkeleton
+  // TransactionSkeleton
   let txSkeleton = props.txSkeleton;
 
-  // If the creating spore requires a cluster, collect it to inputs/outputs to prove it's unlockable
-  let injectClusterCellResult: Awaited<ReturnType<typeof injectLiveClusterCell>> | undefined;
-  if (sporeData.clusterId) {
-    injectClusterCellResult = await injectLiveClusterCell({
-      cell: await getClusterById(sporeData.clusterId, config),
-      capacityMargin: props.cluster?.capacityMargin,
-      updateWitness: props.cluster?.updateWitness,
-      updateOutput: props.cluster?.updateOutput,
-      addOutput: true,
+  // Check should reference Cluster/ClusterAgent to the transaction
+  const referencingCluster = !!sporeData.clusterId && !props.clusterAgentCell;
+  const referencingClusterAgent = !!sporeData.clusterId && !!props.clusterAgentCell;
+
+  // If referencing a Cluster, inject the Cluster or its LockProxy as reference
+  let injectLiveClusterReferenceResult: Awaited<ReturnType<typeof injectLiveClusterReference>> | undefined;
+  const clusterCell = sporeData.clusterId ? await getClusterById(sporeData.clusterId!, config) : void 0;
+  if (referencingCluster) {
+    injectLiveClusterReferenceResult = await injectLiveClusterReference({
       txSkeleton,
+      cell: clusterCell!,
+      inputLocks: composeInputLocks({
+        fromInfos: props.fromInfos,
+        config: config.lumos,
+      }),
+      outputLocks: composeOutputLocks({
+        outputLocks: [props.toLock],
+        fromInfos: props.fromInfos,
+        changeAddress: props.changeAddress,
+        config: config.lumos,
+      }),
+      capacityMargin: props.cluster?.capacityMargin,
+      updateOutput: props.cluster?.updateOutput,
+      updateWitness: props.cluster?.updateWitness,
+      defaultWitness: props.cluster?.defaultWitness,
+      since: props.cluster?.since,
       config,
     });
-    txSkeleton = injectClusterCellResult.txSkeleton;
+    txSkeleton = injectLiveClusterReferenceResult.txSkeleton;
   }
 
-  // Create spore cell (with the latest version of SporeType script)
+  // If ClusterAgent is provided, inject the ClusterAgent or its LockProxy as reference
+  let injectLiveClusterAgentReferenceResult: Awaited<ReturnType<typeof injectLiveClusterAgentReference>> | undefined;
+  if (referencingClusterAgent) {
+    injectLiveClusterAgentReferenceResult = await injectLiveClusterAgentReference({
+      txSkeleton,
+      cell: props.clusterAgentCell!,
+      inputLocks: composeInputLocks({
+        fromInfos: props.fromInfos,
+        config: config.lumos,
+      }),
+      outputLocks: composeOutputLocks({
+        outputLocks: [props.toLock],
+        fromInfos: props.fromInfos,
+        changeAddress: props.changeAddress,
+        config: config.lumos,
+      }),
+      capacityMargin: props.clusterAgent?.capacityMargin,
+      updateOutput: props.clusterAgent?.updateOutput,
+      updateWitness: props.clusterAgent?.updateWitness,
+      defaultWitness: props.clusterAgent?.defaultWitness,
+      since: props.clusterAgent?.since,
+      config,
+    });
+    txSkeleton = injectLiveClusterAgentReferenceResult.txSkeleton;
+
+    // Even if not referencing Cluster, still make sure Cluster related cellDeps are added
+    const clusterType = clusterCell!.cellOutput.type;
+    const clusterScript = getSporeScript(config, 'Cluster', clusterType!);
+    if (!clusterType || !clusterScript) {
+      throw new Error('Cannot reference Cluster because target cell is not a supported version of Cluster');
+    }
+    txSkeleton = addCellDep(txSkeleton, clusterScript.cellDep);
+    txSkeleton = addCellDep(txSkeleton, {
+      outPoint: clusterCell!.outPoint!,
+      depType: 'code',
+    });
+  }
+
+  // Validate SporeData.contentType
+  const contentType = setContentTypeParameters(sporeData.contentType, sporeData.contentTypeParameters ?? {});
+  if (!isContentTypeValid(contentType)) {
+    throw new Error(`Spore has specified an invalid data.contentType: ${contentType}`);
+  }
+
+  // Create Spore cell (the latest version)
   const sporeScript = getSporeScript(config, 'Spore');
   let sporeCell: Cell = correctCellMinimalCapacity({
     cellOutput: {
@@ -99,7 +167,7 @@ export async function injectNewSporeOutput(props: {
     },
     data: bytes.hexify(
       packRawSporeData({
-        contentType: setContentTypeParameters(sporeData.contentType, sporeData.contentTypeParameters ?? {}),
+        contentType,
         content: sporeData.content,
         clusterId: sporeData.clusterId,
       }),
@@ -118,26 +186,15 @@ export async function injectNewSporeOutput(props: {
     return outputs.push(sporeCell);
   });
 
-  // Fix output indices to prevent them from future reduction
+  // Fix the cell's output index to prevent it from future reduction
   txSkeleton = txSkeleton.update('fixedEntries', (fixedEntries) => {
-    // Fix the spore's output index to prevent it from future reduction
-    fixedEntries = fixedEntries.push({
+    return fixedEntries.push({
       field: 'outputs',
       index: outputIndex,
     });
-
-    // Fix the dep cluster's output index to prevent it from future reduction
-    if (sporeData.clusterId && !!injectClusterCellResult) {
-      fixedEntries = fixedEntries.push({
-        field: 'outputs',
-        index: injectClusterCellResult.outputIndex,
-      });
-    }
-
-    return fixedEntries;
   });
 
-  // Generate Spore Id if possible
+  // Generate ID for the new Spore if possible
   const firstInput = txSkeleton.get('inputs').first();
   if (firstInput !== void 0) {
     txSkeleton = injectNewSporeIds({
@@ -147,25 +204,40 @@ export async function injectNewSporeOutput(props: {
     });
   }
 
-  // Add Spore cellDeps
-  txSkeleton = addCellDep(txSkeleton, sporeScript.cellDep);
-  // Add dep cluster to cellDeps, if exists
-  if (injectClusterCellResult) {
-    const clusterCell = txSkeleton.get('inputs').get(injectClusterCellResult.inputIndex)!;
-    txSkeleton = addCellDep(txSkeleton, {
-      outPoint: clusterCell.outPoint!,
-      depType: 'code',
+  // Inject Mutants as cellDeps, and inject payments if needed
+  let injectLiveMutantReferencesResult: Awaited<ReturnType<typeof injectLiveMutantReferences>> | undefined;
+  const decodedContentType = decodeContentType(contentType);
+  if (decodedContentType.parameters.mutant !== void 0) {
+    injectLiveMutantReferencesResult = await injectLiveMutantReferences({
+      txSkeleton,
+      mutantIds: decodedContentType.parameters.mutant,
+      paymentAmount: props.mutant?.paymentAmount,
+      config,
     });
+    txSkeleton = injectLiveMutantReferencesResult.txSkeleton;
   }
+
+  // Add Spore relevant cellDeps
+  txSkeleton = addCellDep(txSkeleton, sporeScript.cellDep);
 
   return {
     txSkeleton,
     outputIndex,
     hasId: firstInput !== void 0,
-    cluster: injectClusterCellResult
+    reference: {
+      referenceTarget: referencingCluster ? 'cluster' : referencingClusterAgent ? 'clusterAgent' : 'none',
+      referenceType: referencingCluster
+        ? injectLiveClusterReferenceResult!.referenceType
+        : referencingClusterAgent
+          ? injectLiveClusterAgentReferenceResult!.referenceType
+          : void 0,
+      cluster: injectLiveClusterReferenceResult?.cluster,
+      clusterAgent: injectLiveClusterAgentReferenceResult?.clusterAgent,
+    },
+    mutantReference: injectLiveMutantReferencesResult
       ? {
-          inputIndex: injectClusterCellResult.inputIndex,
-          outputIndex: injectClusterCellResult.outputIndex,
+          referenceType: injectLiveMutantReferencesResult.referenceType,
+          payment: injectLiveMutantReferencesResult.payment,
         }
       : void 0,
   };

@@ -9,12 +9,12 @@ export async function injectLiveClusterCell(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   cell: Cell;
   addOutput?: boolean;
-  config?: SporeConfig;
-  updateOutput?(cell: Cell): Cell;
+  updateOutput?: (cell: Cell) => Cell;
   capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
   updateWitness?: HexString | ((witness: HexString) => HexString);
   defaultWitness?: HexString;
   since?: PackedSince;
+  config?: SporeConfig;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
   inputIndex: number;
@@ -27,11 +27,11 @@ export async function injectLiveClusterCell(props: {
   // Get TransactionSkeleton
   let txSkeleton = props.txSkeleton;
 
-  // Check target cell type
+  // Check target cell's type
   const clusterCellType = clusterCell.cellOutput.type;
-  const clusterScript = getSporeScript(config, 'Cluster', clusterCellType);
+  const clusterScript = getSporeScript(config, 'Cluster', clusterCellType!);
   if (!clusterCellType || !clusterScript) {
-    throw new Error('Cannot inject cluster because target cell is not Cluster');
+    throw new Error('Cannot inject Cluster because target cell is not a supported version of Cluster');
   }
 
   // Add cluster cell to Transaction.inputs

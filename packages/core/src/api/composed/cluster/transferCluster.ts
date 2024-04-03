@@ -1,21 +1,24 @@
 import { BIish } from '@ckb-lumos/bi';
 import { FromInfo } from '@ckb-lumos/common-scripts';
-import { Address, OutPoint, Script } from '@ckb-lumos/base';
+import { Address, OutPoint, PackedSince, Script } from '@ckb-lumos/base';
 import { BI, Cell, helpers, HexString, Indexer } from '@ckb-lumos/lumos';
-import { getSporeConfig, SporeConfig } from '../../../config';
 import { injectCapacityAndPayFee, payFeeByOutput } from '../../../helpers';
+import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
+import { generateTransferClusterAction, injectCommonCobuildProof } from '../../../cobuild';
 import { getClusterByOutPoint, injectLiveClusterCell } from '../..';
 
 export async function transferCluster(props: {
   outPoint: OutPoint;
   toLock: Script;
-  config?: SporeConfig;
   fromInfos?: FromInfo[];
   changeAddress?: Address;
   useCapacityMarginAsFee?: boolean;
+  updateOutput?: (cell: Cell) => Cell;
   capacityMargin?: BIish | ((cell: Cell, margin: BI) => BIish);
   updateWitness?: HexString | ((witness: HexString) => HexString);
-  updateOutput?(cell: Cell): Cell;
+  defaultWitness?: HexString;
+  since?: PackedSince;
+  config?: SporeConfig;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
   inputIndex: number;
@@ -34,21 +37,20 @@ export async function transferCluster(props: {
     throw new Error('When useCapacityMarginAsFee is enabled, cannot set capacityMargin of the cluster');
   }
 
-  // Get TransactionSkeleton
+  // TransactionSkeleton
   let txSkeleton = helpers.TransactionSkeleton({
     cellProvider: indexer,
   });
 
-  // Find cluster by OutPoint
+  // Find Cluster by OutPoint
   const clusterCell = await getClusterByOutPoint(props.outPoint, config);
+  const clusterScript = getSporeScript(config, 'Cluster', clusterCell.cellOutput.type!);
 
-  // Add cluster to Transaction.inputs and Transaction.outputs
+  // Add Cluster to inputs and outputs of the Transaction
   const injectLiveClusterCellResult = await injectLiveClusterCell({
     txSkeleton,
-    addOutput: true,
     cell: clusterCell,
-    updateWitness: props.updateWitness,
-    capacityMargin: props.capacityMargin,
+    addOutput: true,
     updateOutput(cell) {
       cell.cellOutput.lock = props.toLock;
       if (props.updateOutput instanceof Function) {
@@ -56,21 +58,51 @@ export async function transferCluster(props: {
       }
       return cell;
     },
+    capacityMargin: props.capacityMargin,
+    defaultWitness: props.defaultWitness,
+    updateWitness: props.updateWitness,
+    since: props.since,
     config,
   });
   txSkeleton = injectLiveClusterCellResult.txSkeleton;
+
+  // Generate TransferSpore actions
+  const actionResult = generateTransferClusterAction({
+    txSkeleton,
+    inputIndex: injectLiveClusterCellResult.inputIndex,
+    outputIndex: injectLiveClusterCellResult.outputIndex,
+  });
 
   if (!useCapacityMarginAsFee) {
     // Inject needed capacity and pay fee
     const injectCapacityAndPayFeeResult = await injectCapacityAndPayFee({
       txSkeleton,
-      changeAddress: props.changeAddress,
       fromInfos: props.fromInfos!,
-      fee: BI.from(0),
+      changeAddress: props.changeAddress,
+      updateTxSkeletonAfterCollection(_txSkeleton) {
+        // Inject CobuildProof
+        if (clusterScript.behaviors?.cobuild) {
+          const injectCobuildProofResult = injectCommonCobuildProof({
+            txSkeleton: _txSkeleton,
+            actions: actionResult.actions,
+          });
+          _txSkeleton = injectCobuildProofResult.txSkeleton;
+        }
+        return _txSkeleton;
+      },
       config,
     });
     txSkeleton = injectCapacityAndPayFeeResult.txSkeleton;
   } else {
+    // Inject CobuildProof
+    if (clusterScript.behaviors?.cobuild) {
+      const injectCobuildProofResult = injectCommonCobuildProof({
+        txSkeleton: txSkeleton,
+        actions: actionResult.actions,
+      });
+      txSkeleton = injectCobuildProofResult.txSkeleton;
+    }
+
     // Pay fee by the cluster cell's capacity margin
     txSkeleton = await payFeeByOutput({
       outputIndex: injectLiveClusterCellResult.outputIndex,

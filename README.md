@@ -4,8 +4,14 @@
   <img src="./docs/assets/readme-banner.webp" alt="Spore SDK">
 </p>
 
+<h1 align="center">
+  Spore SDK
+</h1>
+
 <p align="center">
-  A TypeScript SDK to interact with Spore Protocol.
+  <b>
+    「The Ultimate TypeScript SDK for Spore Protocol」
+  </b>
 </p>
 
 <p align="center">
@@ -29,11 +35,13 @@
   </a>
 </p>
 
-## Intro
+<p align="center">
+  Spore SDK is a comprehensive web development kit specifically designed for seamless integration with <a href="https://github.com/sporeprotocol/spore-contract">Spore</a>, an on-chain asset protocol to power digital asset ownership, distribution, and value capture, built on top of <a href="https://github.com/nervosnetwork/ckb">CKB</a>.
+</p>
 
-Spore SDK is a Web development kit for integration with [Spore Protocol](https://github.com/sporeprotocol/spore-contract), an asset protocol for valuing on-chain contents, build on top of [CKB](https://github.com/nervosnetwork/ckb).
-It leverages the power of [Lumos](https://github.com/ckb-js/lumos) to provide seamless dapp development with Spore.
-
+<p align="center">
+  With Spore SDK, developers gain access to powerful tools and resources that enable them to effortlessly create spore-related dapps, fully leveraging the immense potential of Spore Protocol.
+</p>
 
 ## Features
 
@@ -45,74 +53,60 @@ It leverages the power of [Lumos](https://github.com/ckb-js/lumos) to provide se
 
 ## Documentation
 
-For full documentation and instructions, visit [docs.spore.pro](https://docs.spore.pro).
+Full documentation and instructions, visit: [Spore Docs](https://docs.spore.pro).
 
 
 ## Getting started
 
-### Create your first spore in Node.js
+### Installation
 
-Follow the step-by-step tutorial to create your first spore: [Creating your first Spore](https://docs.spore.pro/tutorials/create-first-spore).
+Go through the recipe [Start using Spore SDK](./docs/core/setup.md) for installation.
 
-Or you can run and play with the [spore-first-example](https://github.com/sporeprotocol/spore-first-example) on [StackBlitz](https://stackblitz.com/github/sporeprotocol/spore-first-example?file=src%2Findex.ts&view=editor).
+### Running in Node.js
 
-### Follow the recipes
+- Follow the tutorial to learn about spore creation: [Create your first Spore](https://docs.spore.pro/tutorials/create-first-spore)
+- Refer to specific code snippets: [Spore Examples](./docs/resources/examples.md)
 
-Visit the Spore Docs for more categorized and general [How-to recipes](https://docs.spore.pro/category/how-to).
+### Running in browsers
 
-Or study the following recipes to explore the usage of the SDK:
+- Follow the tutorial to build a dapp from scratch: [Create simple on-chain blog](https://docs.spore.pro/tutorials/create-on-chain-blog)
+- Explore all featured dapp demos: [Spore Demos](./docs/resources/demos.md)
 
-- [Construct transactions with Spore SDK](docs/recipes/construct-transaction.md)
-
-- [Create immortal spores on-chain](docs/recipes/create-immortal-spore.md)
-
-- [Pay fee with capacity margin](docs/recipes/capacity-margin.md)
-
-- [Handle spore/cluster data](docs/recipes/handle-cell-data.md)
-
-- [Configure Spore SDK](docs/recipes/configure-spore-config.md)
-
-### Building browser env dapps
-
-The Spore SDK is built on top of [Lumos](https://github.com/ckb-js/lumos), an open-source dapp framework for Nervos CKB. Lumos incorporates certain Node-polyfills into its implementation, such as `crypto-browserify` and `buffer`, to provide specific functionalities.
-
-If you intend to use the Spore SDK in a browser environment, it's important to note that you may need to manually add Node-polyfills to your application. This ensures that the Spore SDK functions properly in the browser. For detailed instructions on how to add these polyfills, refer to the Lumos documentation: [CRA, Vite, Webpack or Other](https://lumos-website.vercel.app/recipes/cra-vite-webpack-or-other).
 
 ## Development
 
-### Packages & toolchains
+### Toolchain & utilities
 
-- [@spore-sdk/core](./packages/core) - Provides essential tools for constructing basic and advanced transactions on spores and clusters. Additionally, it offers convenient utilities for handling [serialization](https://github.com/nervosnetwork/molecule) of spores/clusters.
+- [@spore-sdk/core](./packages/core) - Provides essential tools for constructing basic and advanced transactions on spores and clusters. Additionally, it offers convenient utilities for handling [serialization](https://github.com/nervosnetwork/molecule) of spores/clusters
 
-### Code references
+### Reference
 
-- [Examples](./docs/resources/examples.md) - Code block examples for implementing basic and specific features.
+- [Examples](./docs/resources/examples.md) - Code block examples for implementing basic and specific features
 
-- [Demos](./docs/resources/demos.md) - Demo applications with full functionality, including seamless integration with wallets.
+- [Demos](./docs/resources/demos.md) - Demo applications with full functionality, including seamless integration with wallets
 
 
-### APIs
+### API
 
-- [Composed APIs](./docs/core/composed-apis.md) - APIs for efficient spores/clusters. interactions with minimal time overhead
-
-- [Joint APIs](./docs/core/joint-apis.md) (WIP) - APIs for building advanced transactions as a fun block-building process.
+- [Composed APIs](./docs/core/composed-apis.md) - Efficient APIs to build Spore transactions with minimal time overhead
+  
+- [Utilities](./docs/core/utilities.md) - Handy helper functions to save developers' time and effort 
  
  
 ## Community
 
-Reach out to us if you have questions about Spore Protocol:
-- Join the community on: [ HaCKBee - Discord](https://discord.gg/9eufnpZZ8P)
-- Contact via email at [contact@spore.pro](mailto:contact@spore.pro)
+Chat everything about Spore here:
+
+- Join our discord channel: [HaCKBee](https://discord.gg/9eufnpZZ8P)
+- Contact via email: [contact@spore.pro](mailto:contact@spore.pro)
 
 ## Contributing
 
-To contribute and assist in enhancing the Spore SDK, we welcome your pull requests:
+To submit pull requests, make sure:
 
-- `Active Branch` - By default, you can submit pull requests to the `beta` branch.
-
-- `Commit Styling` - Ensure that your commit styling does not conflict with the [existing commits](https://github.com/sporeprotocol/spore-sdk/commits).
-
-- `Clear Information` - Please provide a clear and descriptive title and description for your pull requests.
+- Please submit pull requests based on the `beta` branch
+- Please ensure your commit styling won't conflict with the [existing commits](https://github.com/sporeprotocol/spore-sdk/commits)
+- Please provide a clear and descriptive title and description for your pull requests
 
 ## License
 

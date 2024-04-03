@@ -1,18 +1,13 @@
 import { bytes, BytesLike } from '@ckb-lumos/codec';
 
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
 export function bytifyRawString(text: string): Uint8Array {
-  if (typeof window !== 'undefined' && 'TextEncoder' in window) {
-    return new TextEncoder().encode(text);
-  } else {
-    return Uint8Array.from(Buffer.from(text, 'utf-8'));
-  }
+  return encoder.encode(text);
 }
 
-export function bufferToRawString(source: BytesLike): string {
+export function bufferToRawString(source: BytesLike, options?: TextDecodeOptions): string {
   const buffer = bytes.bytify(source);
-  if (typeof window !== 'undefined' && 'TextDecoder' in window) {
-    return new TextDecoder().decode(buffer);
-  } else {
-    return Buffer.from(buffer).toString();
-  }
+  return decoder.decode(buffer, options);
 }

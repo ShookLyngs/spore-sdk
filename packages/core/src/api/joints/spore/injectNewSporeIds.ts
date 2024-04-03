@@ -1,6 +1,6 @@
 import { helpers } from '@ckb-lumos/lumos';
 import { generateTypeIdsByOutputs } from '../../../helpers';
-import { getSporeConfig, getSporeScript, isSporeScriptSupported, SporeConfig } from '../../../config';
+import { getSporeConfig, isSporeScriptSupported, SporeConfig } from '../../../config';
 
 export function injectNewSporeIds(props: {
   txSkeleton: helpers.TransactionSkeletonType;
@@ -20,13 +20,10 @@ export function injectNewSporeIds(props: {
     throw new Error('Cannot generate Spore Id because Transaction.inputs[0] does not exist');
   }
 
-  // Get SporeType script
-  const sporeScript = getSporeScript(config, 'Spore');
-
   // Calculates TypeIds by the outputs' indices
   let outputs = txSkeleton.get('outputs');
   let typeIdGroup = generateTypeIdsByOutputs(firstInput, outputs.toArray(), (cell) => {
-    return !!cell.cellOutput.type && isSporeScriptSupported(sporeScript, cell.cellOutput.type);
+    return !!cell.cellOutput.type && isSporeScriptSupported(config, cell.cellOutput.type, 'Spore');
   });
 
   // If `sporeOutputIndices` is provided, filter the result

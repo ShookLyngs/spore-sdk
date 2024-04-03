@@ -1,108 +1,309 @@
-import { resolve } from 'path';
-import { readFileSync } from 'fs';
-import { describe, it } from 'vitest';
-import { bytes } from '@ckb-lumos/codec';
-import { OutPoint } from '@ckb-lumos/base';
-import { bytifyRawString } from '../helpers';
-import { createSpore, meltSpore, transferSpore } from '../api';
-import { signAndSendTransaction, TESTNET_ACCOUNTS, TESTNET_ENV } from './shared';
+import { describe, expect, it, afterAll } from 'vitest';
+import { BI } from '@ckb-lumos/lumos';
+import { getSporeScript } from '../config';
+import { unpackToRawMutantArgs } from '../codec';
+import { bufferToRawString, bytifyRawString } from '../helpers';
+import { createSpore, transferSpore, meltSpore, getSporeByOutPoint, getMutantById } from '../api';
+import { expectCellDep, expectTypeId, expectTypeCell, expectCellLock } from './helpers';
+import { getSporeOutput, popRecord, retryQuery, signAndSendTransaction, OutPointRecord } from './helpers';
+import { TEST_ACCOUNTS, TEST_ENV, SPORE_OUTPOINT_RECORDS, cleanupRecords } from './shared';
 
-const localImage = './resources/test.jpg';
-async function fetchInternetImage(src: string) {
-  const res = await fetch(src);
-  return await res.arrayBuffer();
-}
-async function fetchLocalImage(src: string) {
-  const buffer = readFileSync(resolve(__dirname, src));
-  const arrayBuffer = new Uint8Array(buffer).buffer;
-  const base64 = buffer.toString('base64');
-  return {
-    arrayBuffer,
-    arrayBufferHex: bytes.hexify(arrayBuffer),
-    base64,
-    base64Hex: bytes.hexify(bytifyRawString(base64)),
-  };
-}
+describe('Spore', () => {
+  const { rpc, config } = TEST_ENV;
+  const { CHARLIE, ALICE } = TEST_ACCOUNTS;
 
-describe('Spore', function () {
-  it('Create a spore (no cluster)', async function () {
-    const { rpc, config } = TESTNET_ENV;
-    const { CHARLIE } = TESTNET_ACCOUNTS;
-
-    // Generate local image content
-    const content = await fetchLocalImage(localImage);
-
-    // Create cluster cell, collect inputs and pay fee
-    let { txSkeleton } = await createSpore({
-      data: {
-        contentType: 'image/jpeg',
-        content: content.arrayBuffer,
-      },
-      fromInfos: [CHARLIE.address],
-      toLock: CHARLIE.lock,
-      config,
+  afterAll(async () => {
+    await cleanupRecords({
+      name: 'Spore',
     });
+  }, 0);
 
-    // Sign and send transaction
-    await signAndSendTransaction({
-      account: CHARLIE,
-      txSkeleton,
-      config,
-      rpc,
-      send: false,
-    });
-  }, 30000);
+  describe('Spore basics', () => {
+    let existingSporeRecord: OutPointRecord | undefined;
+    it('Create a Spore', async () => {
+      const { txSkeleton, outputIndex, reference } = await createSpore({
+        data: {
+          contentType: 'text/plain',
+          content: bytifyRawString('content'),
+        },
+        toLock: CHARLIE.lock,
+        fromInfos: [CHARLIE.address],
+        config,
+      });
 
-  it('Transfer a spore', async function () {
-    const { rpc, config } = TESTNET_ENV;
-    const { CHARLIE, ALICE } = TESTNET_ACCOUNTS;
+      const spore = getSporeOutput(txSkeleton, outputIndex, config);
+      expect(spore.cell!.cellOutput.lock).toEqual(CHARLIE.lock);
+      expectTypeId(txSkeleton, outputIndex, spore.id);
+      expect(spore.data.contentType).toEqual('text/plain');
+      expect(bufferToRawString(spore.data.content)).toEqual('content');
 
-    const outPoint: OutPoint = {
-      txHash: '0x76cede56c91f8531df0e3084b3127686c485d08ad8e86ea948417094f3f023f9',
-      index: '0x0',
-    };
+      expectTypeCell(txSkeleton, 'output', spore.cell.cellOutput.type!);
+      expectCellDep(txSkeleton, spore.script.cellDep);
 
-    // Create cluster cell, collect inputs and pay fee
-    let { txSkeleton } = await transferSpore({
-      outPoint: outPoint,
-      fromInfos: [CHARLIE.address],
-      toLock: ALICE.lock,
-      config,
-    });
+      expect(reference).toBeDefined();
+      expect(reference.referenceTarget).toEqual('none');
 
-    // Sign and send transaction
-    await signAndSendTransaction({
-      account: CHARLIE,
-      txSkeleton,
-      config,
-      rpc,
-      send: false,
-    });
-  }, 30000);
+      const hash = await signAndSendTransaction({
+        account: CHARLIE,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
 
-  it('Melt a spore', async function () {
-    const { rpc, config } = TESTNET_ENV;
-    const { CHARLIE, ALICE } = TESTNET_ACCOUNTS;
+      if (hash) {
+        SPORE_OUTPOINT_RECORDS.push({
+          outPoint: {
+            txHash: hash,
+            index: BI.from(outputIndex).toHexString(),
+          },
+          account: CHARLIE,
+        });
+      }
+    }, 0);
+    it('Transfer a Spore', async () => {
+      const sporeRecord = existingSporeRecord ?? popRecord(SPORE_OUTPOINT_RECORDS, true);
+      const sporeCell = await retryQuery(() => getSporeByOutPoint(sporeRecord.outPoint, config));
 
-    const outPoint: OutPoint = {
-      txHash: '0x76cede56c91f8531df0e3084b3127686c485d08ad8e86ea948417094f3f023f9',
-      index: '0x0',
-    };
+      expectCellLock(sporeCell, [CHARLIE.lock, ALICE.lock]);
+      const oppositeAccount = sporeRecord.account.address === ALICE.address ? CHARLIE : ALICE;
 
-    // Create cluster cell, collect inputs and pay fee
-    let { txSkeleton } = await meltSpore({
-      outPoint: outPoint,
-      fromInfos: [ALICE.address],
-      config,
-    });
+      const { txSkeleton, outputIndex } = await transferSpore({
+        outPoint: sporeCell.outPoint!,
+        fromInfos: [sporeRecord.account.address],
+        toLock: oppositeAccount.lock,
+        config,
+      });
 
-    // Sign and send transaction
-    await signAndSendTransaction({
-      account: CHARLIE,
-      txSkeleton,
-      config,
-      rpc,
-      send: false,
-    });
-  }, 30000);
+      const spore = getSporeOutput(txSkeleton, outputIndex, config);
+      expect(spore.cell.cellOutput.lock).toEqual(oppositeAccount.lock);
+
+      expectTypeCell(txSkeleton, 'both', spore.cell.cellOutput.type!);
+      expectCellDep(txSkeleton, spore.script.cellDep);
+
+      const hash = await signAndSendTransaction({
+        account: sporeRecord.account,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
+      if (hash) {
+        existingSporeRecord = void 0;
+        SPORE_OUTPOINT_RECORDS.push({
+          outPoint: {
+            txHash: hash,
+            index: BI.from(outputIndex).toHexString(),
+          },
+          account: ALICE,
+        });
+      }
+    }, 0);
+    it('Melt a Spore', async () => {
+      const sporeRecord = existingSporeRecord ?? popRecord(SPORE_OUTPOINT_RECORDS, true);
+      const sporeCell = await retryQuery(() => getSporeByOutPoint(sporeRecord.outPoint, config));
+
+      const { txSkeleton } = await meltSpore({
+        outPoint: sporeCell.outPoint!,
+        changeAddress: CHARLIE.address,
+        config,
+      });
+
+      expectTypeCell(txSkeleton, 'input', sporeCell.cellOutput.type!);
+
+      const changeCell = txSkeleton.get('outputs').get(0);
+      expect(changeCell).toBeDefined();
+      expect(changeCell!.cellOutput.lock).toEqual(CHARLIE.lock);
+
+      const sporeScript = getSporeScript(config, 'Spore', sporeCell.cellOutput.type!);
+      expectCellDep(txSkeleton, sporeScript.cellDep);
+
+      const hash = await signAndSendTransaction({
+        account: sporeRecord.account,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
+      if (hash) {
+        existingSporeRecord = void 0;
+      }
+    }, 0);
+  });
+
+  describe('Spore with immortal mutant', () => {
+    let existingSporeRecord: OutPointRecord | undefined;
+    it('Create an immortal Spore', async () => {
+      const { txSkeleton, outputIndex } = await createSpore({
+        data: {
+          contentType: 'text/plain',
+          content: bytifyRawString('immortal'),
+          contentTypeParameters: {
+            immortal: true,
+          },
+        },
+        toLock: CHARLIE.lock,
+        fromInfos: [CHARLIE.address],
+        config,
+      });
+
+      const spore = getSporeOutput(txSkeleton, outputIndex, config);
+      expect(spore.cell!.cellOutput.lock).toEqual(CHARLIE.lock);
+      expect(spore.data.contentType).toEqual('text/plain;immortal=true');
+      expect(bufferToRawString(spore.data.content)).toEqual('immortal');
+
+      const hash = await signAndSendTransaction({
+        account: CHARLIE,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
+      if (hash) {
+        existingSporeRecord = {
+          outPoint: {
+            txHash: hash,
+            index: BI.from(outputIndex).toHexString(),
+          },
+          account: CHARLIE,
+        };
+      }
+    }, 0);
+    it('Transfer an immortal Spore', async () => {
+      expect(existingSporeRecord).toBeDefined();
+      const sporeRecord = existingSporeRecord!;
+      const sporeCell = await retryQuery(() => getSporeByOutPoint(sporeRecord!.outPoint, config));
+
+      expectCellLock(sporeCell, [CHARLIE.lock, ALICE.lock]);
+      const oppositeAccount = sporeRecord.account.address === ALICE.address ? CHARLIE : ALICE;
+
+      const { txSkeleton, outputIndex } = await transferSpore({
+        outPoint: sporeCell.outPoint!,
+        fromInfos: [sporeRecord.account.address],
+        toLock: oppositeAccount.lock,
+        config,
+      });
+
+      const hash = await signAndSendTransaction({
+        account: sporeRecord.account,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
+      if (hash) {
+        existingSporeRecord = {
+          outPoint: {
+            txHash: hash,
+            index: BI.from(outputIndex).toHexString(),
+          },
+          account: oppositeAccount,
+        };
+      }
+    }, 0);
+    it('Try melt an immortal Spore', async () => {
+      expect(existingSporeRecord).toBeDefined();
+      const sporeRecord = existingSporeRecord!;
+      const sporeCell = await retryQuery(() => getSporeByOutPoint(sporeRecord!.outPoint, config));
+
+      const { txSkeleton } = await meltSpore({
+        outPoint: sporeCell.outPoint!,
+        changeAddress: CHARLIE.address,
+        config,
+      });
+
+      await expect(
+        signAndSendTransaction({
+          account: sporeRecord.account,
+          txSkeleton,
+          config,
+          rpc,
+          send: true,
+        }),
+      ).rejects.toThrow();
+    }, 0);
+  });
+
+  // TODO: Skip Mutant tests due to feature implementation incomplete
+  describe.skip('Spore with Mutant', () => {
+    it('Create a Spore with Mutant', async () => {
+      const immortalMutantId = '0x79713beaf43310d4d9c838811553399f3e7c114353d4788de3ed2a165e288c11';
+
+      const { txSkeleton, outputIndex, reference, mutantReference } = await createSpore({
+        data: {
+          contentType: 'text/plain',
+          content: bytifyRawString('content'),
+          contentTypeParameters: {
+            mutant: [immortalMutantId],
+          },
+        },
+        fromInfos: [CHARLIE.address],
+        toLock: CHARLIE.lock,
+        config,
+      });
+
+      const spore = getSporeOutput(txSkeleton, outputIndex, config);
+      expect(spore.data.contentType).toEqual(`text/plain;mutant[]=${immortalMutantId.slice(2)}`);
+
+      expect(reference).toBeDefined();
+      expect(reference.referenceTarget).toEqual('none');
+
+      expect(mutantReference).toBeDefined();
+      const mutantCell = await getMutantById(immortalMutantId, config);
+      const mutantArgs = unpackToRawMutantArgs(mutantCell.cellOutput.type!.args);
+      if (mutantArgs.minPayment !== void 0) {
+        expect(mutantReference!.referenceType).toEqual('payment');
+        expect(mutantReference!.payment).toBeDefined();
+        expect(mutantReference!.payment!.outputIndices.length).toEqual(1);
+        const paymentCell = txSkeleton.get('outputs').get(mutantReference!.payment!.outputIndices[0]);
+        expect(BI.from(paymentCell!.cellOutput.capacity).gte(BI.from(10).pow(mutantArgs.minPayment))).toEqual(true);
+        expect(paymentCell!.cellOutput.lock).toEqual(mutantCell.cellOutput.lock);
+      } else {
+        expect(mutantReference!.referenceType).toEqual('none');
+      }
+
+      const hash = await signAndSendTransaction({
+        account: CHARLIE,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
+      if (hash) {
+        SPORE_OUTPOINT_RECORDS.push({
+          outPoint: {
+            txHash: hash,
+            index: BI.from(outputIndex).toHexString(),
+          },
+          account: CHARLIE,
+        });
+      }
+    }, 0);
+    it('Create a Spore with Mutant required Cluster', async () => {
+      const { txSkeleton, outputIndex, reference, mutantReference } = await createSpore({
+        data: {
+          contentType: 'text/plain',
+          content: bytifyRawString('content'),
+          clusterId: '0x',
+          contentTypeParameters: {
+            mutant: ['0x'],
+          },
+        },
+        fromInfos: [CHARLIE.address],
+        toLock: CHARLIE.lock,
+        config,
+      });
+
+      console.log('Spore Reference:', reference);
+      console.log('Spore MutantReference:', mutantReference);
+
+      await signAndSendTransaction({
+        account: CHARLIE,
+        txSkeleton,
+        config,
+        rpc,
+        send: false,
+      });
+    }, 0);
+  });
 });

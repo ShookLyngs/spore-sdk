@@ -1,23 +1,33 @@
 # Spore Default Lock Examples
 
-## Introduction
+## What is `CKB Default Lock`
 
-### What is `CKB Default Lock`
+[CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c) is the most commonly used lock script on [Nervos CKB](https://www.nervos.org), also a great starting point for beginners due to its simplicity. You can create private assets with the CKB Default Lock for safeguarding ownership of your private assets.
 
-[CKB Default Lock](https://www.notion.so/cryptape/examples/secp256k1) is the most commonly used lock script on [Nervos CKB](https://www.nervos.org/), also a great starting point for beginners due to its simplicity. You can create private spores and clusters with the [CKB Default Lock](https://github.com/nervosnetwork/ckb-system-scripts/blob/master/c/secp256k1_blake160_sighash_all.c) for safeguarding ownership of your private assets.
+CKB Default Lock is also known as the `Secp256k1Blake160 Sign-all` lock. 
 
-[CKB Default Lock](https://www.notion.so/cryptape/examples/secp256k1) is also known as the `Secp256k1Blake160 Sign-all` lock. 
-
-### Featured examples
+## Featured examples
 
 Spore:
-- [apis/createSpore.ts](./apis/createSpore.ts): Create a spore with [CKB Default Lock](https://www.notion.so/cryptape/examples/secp256k1)
-- [apis/transferSpore.ts](./apis/transferSpore.ts): Unlock and transfer a spore from A to B
-- [apis/meltSpore.ts](./apis/meltSpore.ts): Unlock and melt a spore from the blockchain
+- [apis/createSpore.ts](./apis/createSpore.ts): Create a Spore
+- [apis/createSporeWithCluster.ts](./apis/createSporeWithCluster.ts): Create a Clustered Spore with a Cluster
+- [apis/createSporeWithClusterAgent.ts](./apis/createSporeWithClusterAgent.ts): Create a Clustered Spore with a ClusterAgent
+- [apis/transferSpore.ts](./apis/transferSpore.ts): Transfer a Spore to another account
+- [apis/meltSpore.ts](./apis/meltSpore.ts): Melt a Spore and redeem the occupied CKBytes
 
 Cluster:
-- [apis/createCluster.ts](./apis/createCluster.ts): Create a cluster with [CKB Default Lock](https://www.notion.so/cryptape/examples/secp256k1)
-- [apis/transferSpore.ts](./apis/transferCluster.ts): Unlock and transfer a cluster from A to B
+- [apis/createCluster.ts](./apis/createCluster.ts): Create a Cluster
+- [apis/transferCluster.ts](./apis/transferCluster.ts): Transfer a Cluster to another account
+
+ClusterProxy:
+- [apis/createClusterProxy.ts](./apis/createClusterProxy.ts): Create a ClusterProxy
+- [apis/transferClusterProxy.ts](./apis/transferClusterProxy.ts): Transfer a ClusterProxy to another account
+- [apis/meltClusterProxy.ts](./apis/meltClusterProxy.ts): Melt a ClusterProxy and redeem the occupied CKBytes
+
+ClusterAgent:
+- [apis/createClusterAgent.ts](./apis/createClusterAgent.ts): Create a ClusterAgent
+- [apis/transferClusterAgent.ts](./apis/transferClusterAgent.ts): Transfer a ClusterAgent to another account
+- [apis/meltClusterAgent.ts](./apis/meltClusterAgent.ts): Melt a ClusterAgent and redeem the occupied CKBytes
 
 ## Run examples
 

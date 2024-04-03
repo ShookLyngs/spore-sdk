@@ -14,7 +14,7 @@ describe('Buffer', () => {
 
     for (const raw of strings) {
       const decoded = bufferToRawString(bytifyRawString(raw.input));
-      expect(decoded).to.eq(raw.expected);
+      expect(decoded).toEqual(raw.expected);
     }
   });
   it('Encode buffer from special characters', () => {
@@ -26,13 +26,13 @@ describe('Buffer', () => {
 
     for (const raw of strings) {
       const decoded = bufferToRawString(bytifyRawString(raw.input));
-      expect(decoded).to.eq(raw.expected);
+      expect(decoded).toEqual(raw.expected);
     }
   });
   it('Encoded ascii & utf8 should be the same', () => {
     const raw = 'English';
     const utf8Encoded = bytes.hexify(bytifyRawString(raw));
     const asciiEncoded = bytes.hexify(bytes.bytifyRawString(raw));
-    expect(utf8Encoded).to.eq(asciiEncoded);
+    expect(utf8Encoded).toEqual(asciiEncoded);
   });
 });

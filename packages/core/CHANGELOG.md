@@ -1,5 +1,51 @@
 # @spore-sdk/core
 
+## 0.2.0-beta.3
+
+### Patch Changes
+
+- a605f5f: Fix duplicated capacity collection in the "createSpore" API
+- 858c8fb: slipt co-build generation interfaces to export pure assembly functions
+
+## 0.2.0-beta.2
+
+### Patch Changes
+
+- 8a42d58: Add predefined SporeConfig for Mainnet
+- 16dfe4f: BREAKING CHANGE: Replaced v2 contracts with a v1-compatible preview version
+- 216d357: Support selecting v1/v2 version when creating clusters
+
+## 0.2.0-beta.1
+
+### Patch Changes
+
+- 22d062d: BREAKING CHANGE: Replaced v2 preview contracts
+
+## 0.2.0-beta.0
+
+### Minor Changes
+
+- b89681c: Support basic Cobuild feature with legacy locks
+
+### Patch Changes
+
+- 68e7ed8: Support finding SporeScripts by predefined tags
+- aa1895f: Remove minPayment prop from the transferClusterProxy API
+
+## 0.1.1-beta.0
+
+### Patch Changes
+
+- 8801116: Fix typo of the "assertTransactionSkeletonSize" API
+- 17fb34c: Support Mutant related features
+- 347c225: Fix spore/cluster query logic, should validate target id before querying
+- 7c9ee66: Support ClusterProxy and ClusterAgent type cells
+- 7e64429: Remove "fromInfos" prop from the "meltSpore" API
+- 3b06bcb: Add multipart content support
+- c025b67: Add new spore type script version to support more contract features
+- e807c5a: Fix and optimize the logic of capacity collection
+- 2db9424: Support lock proxy in spore creation
+
 ## 0.1.0
 
 ### Minor Changes

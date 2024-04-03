@@ -2,14 +2,15 @@
 
 ## What is `Anyone-can-pay` lock
 
-[Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) (ACP) lock is designed to be unlocked by anyone without signature verification and accepts any amount of CKB/UDT payment from the unlocker. You can create public clusters with the [Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) lock and benefit from charging other users for creating spores within the public cluster.
+[Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) (ACP) lock is designed to be unlocked by anyone without signature verification and accepts any amount of CKB/UDT payment from the unlocker.
+You can create public Clusters with the Anyone-can-pay lock and benefit from charging other users for creating Spores that references the public Clusters.
 
 Refer to the RFC for more detailed rules: [CKB RFC 0026: Anyone-can-pay Lock](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md#script-structure).
 
 ## Featured examples
 
-- [apis/createAcpCluster.ts](./apis/createAcpCluster.ts): Create a public cluster with the [Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) lock
-- [apis/createSporeInAcpCluster.ts](./apis/createSporeInAcpCluster.ts): Create a [CKB Default Lock](https://www.notion.so/cryptape/examples/secp256k1) private spore within an [Anyone-can-pay](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0026-anyone-can-pay/0026-anyone-can-pay.md) lock cluster
+- [apis/createAcpCluster.ts](./apis/createAcpCluster.ts): Create a public Cluster that can be referenced by any Spore
+- [apis/createSporeWithAcpCluster.ts](./apis/createSporeWithAcpCluster.ts): Create a private Spore that references a public Cluster
 
 ## Run examples
 
