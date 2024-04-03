@@ -71,6 +71,8 @@ export function injectCommonCobuildProof(props: {
   if (txSkeleton.get('inputs').size > 0) {
     // Generate WitnessLayout
 
+    let witeness = Array.from(txSkeleton.get('witnesses'))[-1];
+
     // Append the witness to the end of the witnesses
     let witnessIndex: number | undefined;
     txSkeleton = txSkeleton.update('witnesses', (witnesses) => {
