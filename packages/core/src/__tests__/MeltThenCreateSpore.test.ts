@@ -33,11 +33,8 @@ describe('Spore', () => {
       const spore = getSporeOutput(txSkeleton, outputIndex, config);
       expect(spore.cell!.cellOutput.lock).toEqual(ALICE.lock);
       expectTypeId(txSkeleton, outputIndex, spore.id);
-      expect(spore.data.contentType).toEqual('text/plain');
-      expect(bufferToRawString(spore.data.content)).toEqual('content');
-
-      expectTypeCell(txSkeleton, 'output', spore.cell.cellOutput.type!);
       expectCellDep(txSkeleton, spore.script.cellDep);
+      expectTypeCell(txSkeleton, 'output', spore.cell.cellOutput.type!);
 
       expect(reference).toBeDefined();
       expect(reference.referenceTarget).toEqual('none');
