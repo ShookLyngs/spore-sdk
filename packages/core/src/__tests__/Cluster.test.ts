@@ -3,7 +3,7 @@ import { BI } from '@ckb-lumos/lumos';
 import { getSporeScript } from '../config';
 import { bytifyRawString, waitForMilliseconds } from '../helpers';
 import { expectTypeId, expectCellDep, expectTypeCell, expectLockCell } from './helpers';
-import { signAndSendTransaction, popRecord, OutPointRecord, IdRecord } from './helpers';
+import { signAndOrSendTransaction, popRecord, OutPointRecord, IdRecord } from './helpers';
 import { retryQuery, getSporeOutput, getClusterOutput, expectCellLock } from './helpers';
 import { createCluster, createSpore, getClusterById, getClusterByOutPoint, transferCluster } from '../api';
 import {
@@ -48,7 +48,7 @@ describe('Cluster', () => {
       expectTypeCell(txSkeleton, 'output', cluster.cell.cellOutput.type!);
       expectCellDep(txSkeleton, cluster.script.cellDep);
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton,
         config,
@@ -85,7 +85,7 @@ describe('Cluster', () => {
       expectTypeCell(txSkeleton, 'both', cluster.cell.cellOutput.type!);
       expectCellDep(txSkeleton, cluster.script.cellDep);
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterRecord.account,
         txSkeleton,
         config,
@@ -138,7 +138,7 @@ describe('Cluster', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterRecord.account,
         txSkeleton,
         config,
@@ -198,7 +198,7 @@ describe('Cluster', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: [oppositeAccount, clusterRecord.account],
         txSkeleton,
         config,
@@ -271,7 +271,7 @@ describe('Cluster', () => {
         expect(clusterScript).toHaveProperty('tags');
         expect(clusterScript.tags).toContain('v1');
 
-        const hash = await signAndSendTransaction({
+        const { hash } = await signAndOrSendTransaction({
           account: CHARLIE,
           txSkeleton,
           rpc,
@@ -356,7 +356,7 @@ describe('Cluster', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: [oppositeAccount, recordAccount],
         txSkeleton,
         config,

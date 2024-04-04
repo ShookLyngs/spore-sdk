@@ -67,14 +67,17 @@ export function createDefaultLockAccount(privateKey: HexString, config?: SporeCo
   };
 }
 
-export async function signAndSendTransaction(props: {
+export async function signAndOrSendTransaction(props: {
   txSkeleton: helpers.TransactionSkeletonType;
   account: Account | Account[];
   config: SporeConfig;
   debug?: boolean;
   send?: boolean;
   rpc?: RPC;
-}): Promise<Hash | undefined> {
+}): Promise<{
+  hash: Hash | undefined;
+  txSkeleton: helpers.TransactionSkeletonType;
+}> {
   // Env
   const { account, config } = props;
   const rpc = props.rpc ?? new RPC(config.ckbNodeUrl);
@@ -108,5 +111,8 @@ export async function signAndSendTransaction(props: {
     }
   }
 
-  return hash;
+  return {
+    hash,
+    txSkeleton,
+  };
 }

@@ -8,7 +8,7 @@ import { createClusterProxy, transferClusterProxy, meltClusterProxy, getClusterP
 import { createClusterAgent, transferClusterAgent, meltClusterAgent, getClusterAgentByOutPoint } from '../api';
 import { expectCellDep, expectLockCell, expectTypeCell, expectTypeId, expectCellLock } from './helpers';
 import { getClusterAgentOutput, getSporeOutput, getClusterProxyOutput, IdRecord } from './helpers';
-import { signAndSendTransaction, retryQuery, popRecord, OutPointRecord } from './helpers';
+import { signAndOrSendTransaction, retryQuery, popRecord, OutPointRecord } from './helpers';
 import { getClusterOutput, getActionsFromCobuildWitnessLayout } from './helpers';
 import { createSporeScriptInfoFromTemplate, ScriptInfo } from '../cobuild';
 import {
@@ -54,7 +54,7 @@ describe('ClusterProxy and ClusterAgent', () => {
           toLock: CHARLIE.lock,
           config,
         });
-        const hash = await signAndSendTransaction({
+        const { hash } = await signAndOrSendTransaction({
           account: CHARLIE,
           txSkeleton,
           config,
@@ -104,7 +104,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterRecord.account,
         txSkeleton,
         config,
@@ -164,7 +164,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: [clusterRecord.account, oppositeAccount],
         txSkeleton,
         config,
@@ -242,7 +242,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         value: clusterProxy.cell.cellOutput.lock,
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterProxyRecord.account,
         txSkeleton,
         config,
@@ -276,7 +276,7 @@ describe('ClusterProxy and ClusterAgent', () => {
       const clusterProxyScript = getSporeScript(config, 'ClusterProxy', clusterProxyType!);
       expectCellDep(txSkeleton, clusterProxyScript.cellDep);
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterProxyRecord.account,
         txSkeleton,
         config,
@@ -335,7 +335,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: oppositeAccount,
         txSkeleton,
         config,
@@ -390,7 +390,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterProxyRecord.account,
         txSkeleton,
         config,
@@ -435,7 +435,7 @@ describe('ClusterProxy and ClusterAgent', () => {
       expectTypeCell(txSkeleton, 'both', clusterAgent.cell.cellOutput.type!);
       expectCellDep(txSkeleton, clusterAgent.script.cellDep);
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: [clusterAgentRecord.account, oppositeAccount],
         txSkeleton,
         config,
@@ -469,7 +469,7 @@ describe('ClusterProxy and ClusterAgent', () => {
       const clusterAgentScript = getSporeScript(config, 'ClusterAgent', clusterAgentType);
       expectCellDep(txSkeleton, clusterAgentScript.cellDep);
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterAgentRecord.account,
         txSkeleton,
         config,
@@ -514,7 +514,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: clusterAgentRecord.account,
         txSkeleton,
         config,
@@ -572,7 +572,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: [oppositeAccount, clusterAgentRecord.account],
         txSkeleton,
         config,
@@ -645,7 +645,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         expect(clusterScript).toHaveProperty('tags');
         expect(clusterScript.tags).toContain('v1');
 
-        const hash = await signAndSendTransaction({
+        const { hash } = await signAndOrSendTransaction({
           account: CHARLIE,
           txSkeleton,
           rpc,
@@ -720,7 +720,7 @@ describe('ClusterProxy and ClusterAgent', () => {
         depType: 'code',
       });
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: [recordAccount, oppositeAccount],
         txSkeleton,
         config,

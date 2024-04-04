@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { asciiLowercase, bytifyRawString } from '../helpers';
+import { afterAll, describe, expect, it } from 'vitest';
+import { bytifyRawString } from '../helpers';
 import {
   createCluster,
   createMutant,
@@ -8,15 +8,8 @@ import {
   getMutantByOutPoint,
   transferMutant,
 } from '../api';
-import {
-  OutPointRecord,
-  fetchLocalFile,
-  getSporeOutput,
-  popRecord,
-  retryQuery,
-  signAndSendTransaction,
-} from './helpers';
-import { CLUSTER_OUTPOINT_RECORDS, SPORE_OUTPOINT_RECORDS, TEST_ACCOUNTS, TEST_ENV } from './shared';
+import { OutPointRecord, fetchLocalFile, getSporeOutput, retryQuery, signAndOrSendTransaction } from './helpers';
+import { SPORE_OUTPOINT_RECORDS, TEST_ACCOUNTS, TEST_ENV, cleanupRecords } from './shared';
 import { BI } from '@ckb-lumos/bi';
 import { unpackToRawMutantArgs } from '../codec';
 
@@ -25,6 +18,12 @@ describe('Mutant', function () {
   const { CHARLIE, ALICE } = TEST_ACCOUNTS;
   let existingMutantRecord: OutPointRecord | undefined;
   let existingClusterRecord: OutPointRecord | undefined;
+
+  afterAll(async () => {
+    await cleanupRecords({
+      name: 'Mutant',
+    });
+  }, 0);
 
   it('Create a Mutant', async function () {
     /**
@@ -62,7 +61,7 @@ describe('Mutant', function () {
     });
 
     // Sign and send transaction
-    const hash = await signAndSendTransaction({
+    const { hash } = await signAndOrSendTransaction({
       account: ALICE,
       txSkeleton,
       config,
@@ -93,7 +92,7 @@ describe('Mutant', function () {
     });
 
     // Sign and send transaction
-    const hash = await signAndSendTransaction({
+    const { hash } = await signAndOrSendTransaction({
       account: ALICE,
       txSkeleton,
       config,
@@ -152,7 +151,7 @@ describe('Mutant', function () {
         expect(mutantReference!.referenceType).toEqual('none');
       }
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: ALICE,
         txSkeleton,
         config,
@@ -180,7 +179,7 @@ describe('Mutant', function () {
         toLock: ALICE.lock,
         config,
       });
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: ALICE,
         txSkeleton,
         config,
@@ -232,7 +231,7 @@ describe('Mutant', function () {
 
       console.log('ALICE address:', ALICE.address);
       console.log('CHARLIE address:', CHARLIE.address);
-      await signAndSendTransaction({
+      await signAndOrSendTransaction({
         account: ALICE,
         txSkeleton,
         config,
