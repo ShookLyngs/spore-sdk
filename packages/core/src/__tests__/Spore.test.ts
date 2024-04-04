@@ -43,7 +43,7 @@ describe('Spore', () => {
       expect(reference).toBeDefined();
       expect(reference.referenceTarget).toEqual('none');
 
-      const hash = await signAndOrSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton,
         config,
@@ -81,7 +81,7 @@ describe('Spore', () => {
       expectTypeCell(txSkeleton, 'both', spore.cell.cellOutput.type!);
       expectCellDep(txSkeleton, spore.script.cellDep);
 
-      const hash = await signAndOrSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: sporeRecord.account,
         txSkeleton,
         config,
@@ -118,7 +118,7 @@ describe('Spore', () => {
       const sporeScript = getSporeScript(config, 'Spore', sporeCell.cellOutput.type!);
       expectCellDep(txSkeleton, sporeScript.cellDep);
 
-      const hash = await signAndOrSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: sporeRecord.account,
         txSkeleton,
         config,
@@ -152,7 +152,7 @@ describe('Spore', () => {
       expect(spore.data.contentType).toEqual('text/plain;immortal=true');
       expect(bufferToRawString(spore.data.content)).toEqual('immortal');
 
-      const hash = await signAndOrSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton,
         config,
@@ -184,7 +184,7 @@ describe('Spore', () => {
         config,
       });
 
-      const hash = await signAndOrSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: sporeRecord.account,
         txSkeleton,
         config,
@@ -262,7 +262,7 @@ describe('Spore', () => {
         expect(mutantReference!.referenceType).toEqual('none');
       }
 
-      const hash = await signAndOrSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton,
         config,

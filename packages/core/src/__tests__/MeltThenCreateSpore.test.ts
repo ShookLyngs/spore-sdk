@@ -1,19 +1,9 @@
 import { describe, expect, it, afterAll } from 'vitest';
 import { BI } from '@ckb-lumos/lumos';
-import { getSporeScript } from '../config';
-import { unpackToRawMutantArgs } from '../codec';
-import { bufferToRawString, bytifyRawString } from '../helpers';
-import {
-  createSpore,
-  transferSpore,
-  meltSpore,
-  getSporeByOutPoint,
-  getMutantById,
-  createCluster,
-  getClusterByOutPoint,
-} from '../api';
-import { expectCellDep, expectTypeId, expectTypeCell, expectCellLock, getClusterOutput } from './helpers';
-import { getSporeOutput, popRecord, retryQuery, signAndOrSendTransaction, OutPointRecord } from './helpers';
+import { bytifyRawString } from '../helpers';
+import { createSpore, getSporeByOutPoint, createCluster, getClusterByOutPoint } from '../api';
+import { expectCellDep, expectTypeId, expectTypeCell } from './helpers';
+import { getSporeOutput, popRecord, retryQuery, signAndOrSendTransaction } from './helpers';
 import { TEST_ACCOUNTS, TEST_ENV, SPORE_OUTPOINT_RECORDS, cleanupRecords, CLUSTER_OUTPOINT_RECORDS } from './shared';
 import { meltThenCreateSpore } from '../api/composed/spore/meltThenCreateSpore';
 
