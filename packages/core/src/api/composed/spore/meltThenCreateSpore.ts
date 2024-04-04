@@ -5,7 +5,7 @@ import { SporeDataProps, injectNewSporeOutput, injectNewSporeIds, getClusterAgen
 import { getSporeByOutPoint, injectLiveSporeCell } from '../..';
 import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
 import { generateCreateSporeAction, generateMeltSporeAction, injectCommonCobuildProof } from '../../../cobuild';
-import { injectCapacityAndPayFee } from '../../../helpers';
+import { assertTransactionSkeletonSize, injectCapacityAndPayFee } from '../../../helpers';
 
 export async function meltThenCreateSpore(props: {
   outPoint: OutPoint;
@@ -49,7 +49,7 @@ export async function meltThenCreateSpore(props: {
   const config = props.config ?? getSporeConfig();
   const indexer = new Indexer(config.ckbIndexerUrl, config.ckbNodeUrl);
   const capacityMargin = BI.from(props.capacityMargin ?? 1_0000_0000);
-  // const maxTransactionSize = props.maxTransactionSize ?? config.maxTransactionSize ?? false;
+  const maxTransactionSize = props.maxTransactionSize ?? config.maxTransactionSize ?? false;
 
   // MeltTransactionSkeleton
   let txSkeleton = helpers.TransactionSkeleton({
@@ -96,30 +96,6 @@ export async function meltThenCreateSpore(props: {
   txSkeleton = injectNewSporeResult.txSkeleton;
 
   /**
-   * Complete Co-Build WitnessLayout
-   */
-
-  const mintSporeCell = txSkeleton.get('outputs').get(injectNewSporeResult.outputIndex)!;
-  const sporeScript = getSporeScript(config, 'Spore', mintSporeCell.cellOutput.type!);
-  if (sporeScript.behaviors?.cobuild) {
-    const meltActionResult = generateMeltSporeAction({
-      txSkeleton,
-      inputIndex: injectLiveSporeCellResult.inputIndex,
-    });
-    const mintActionResult = generateCreateSporeAction({
-      txSkeleton,
-      reference: injectNewSporeResult.reference,
-      outputIndex: injectNewSporeResult.outputIndex,
-    });
-    const actions = meltActionResult.actions.concat(mintActionResult.actions);
-    const injectCobuildProofResult = injectCommonCobuildProof({
-      txSkeleton,
-      actions,
-    });
-    txSkeleton = injectCobuildProofResult.txSkeleton;
-  }
-
-  /**
    * Inject Capacity and Pay fee
    */
 
@@ -135,10 +111,40 @@ export async function meltThenCreateSpore(props: {
         txSkeleton: _txSkeleton,
         config,
       });
+
+      /**
+       * Complete Co-Build WitnessLayout
+       */
+
+      const mintSporeCell = txSkeleton.get('outputs').get(injectNewSporeResult.outputIndex)!;
+      const sporeScript = getSporeScript(config, 'Spore', mintSporeCell.cellOutput.type!);
+      if (sporeScript.behaviors?.cobuild) {
+        const meltActionResult = generateMeltSporeAction({
+          txSkeleton,
+          inputIndex: injectLiveSporeCellResult.inputIndex,
+        });
+        const mintActionResult = generateCreateSporeAction({
+          txSkeleton,
+          reference: injectNewSporeResult.reference,
+          outputIndex: injectNewSporeResult.outputIndex,
+        });
+        const actions = meltActionResult.actions.concat(mintActionResult.actions);
+        const injectCobuildProofResult = injectCommonCobuildProof({
+          txSkeleton,
+          actions,
+        });
+        txSkeleton = injectCobuildProofResult.txSkeleton;
+      }
+
       return _txSkeleton;
     },
   });
   txSkeleton = injectCapacityAndPayFeeResult.txSkeleton;
+
+  // Make sure the tx size is in range (if needed)
+  if (typeof maxTransactionSize === 'number') {
+    assertTransactionSkeletonSize(txSkeleton, void 0, maxTransactionSize);
+  }
 
   return {
     txSkeleton,
