@@ -105,12 +105,14 @@ describe('Spore', () => {
         config,
       });
 
+      console.log('skeleton before alice sign: ', txSkeleton);
       const { txSkeleton: aliceSignedTxSkeleton } = await signAndOrSendTransaction({
         account: ALICE,
         txSkeleton,
         config,
         send: false,
       });
+      console.log('skeleton after alice sign: ', txSkeleton);
       const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton: aliceSignedTxSkeleton,
