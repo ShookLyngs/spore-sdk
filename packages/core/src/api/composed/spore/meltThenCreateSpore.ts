@@ -94,28 +94,6 @@ export async function meltThenCreateSpore(props: {
     config,
   });
   txSkeleton = injectNewSporeResult.txSkeleton;
-  // console.log(JSON.stringify(txSkeleton));
-
-  /**
-   * Inject Capacity and Pay fee
-   */
-
-  const injectCapacityAndPayFeeResult = await injectCapacityAndPayFee({
-    txSkeleton,
-    fromInfos: props.fromInfos,
-    changeAddress: props.changeAddress,
-    config,
-    updateTxSkeletonAfterCollection(_txSkeleton) {
-      // Generate and inject SporeID
-      _txSkeleton = injectNewSporeIds({
-        outputIndices: [injectNewSporeResult.outputIndex],
-        txSkeleton: _txSkeleton,
-        config,
-      });
-      return _txSkeleton;
-    },
-  });
-  txSkeleton = injectCapacityAndPayFeeResult.txSkeleton;
 
   /**
    * Complete Co-Build WitnessLayout
@@ -140,6 +118,27 @@ export async function meltThenCreateSpore(props: {
     });
     txSkeleton = injectCobuildProofResult.txSkeleton;
   }
+
+  /**
+   * Inject Capacity and Pay fee
+   */
+
+  const injectCapacityAndPayFeeResult = await injectCapacityAndPayFee({
+    txSkeleton,
+    fromInfos: props.fromInfos,
+    changeAddress: props.changeAddress,
+    config,
+    updateTxSkeletonAfterCollection(_txSkeleton) {
+      // Generate and inject SporeID
+      _txSkeleton = injectNewSporeIds({
+        outputIndices: [injectNewSporeResult.outputIndex],
+        txSkeleton: _txSkeleton,
+        config,
+      });
+      return _txSkeleton;
+    },
+  });
+  txSkeleton = injectCapacityAndPayFeeResult.txSkeleton;
 
   return {
     txSkeleton,
