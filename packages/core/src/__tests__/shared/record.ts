@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { retryWork } from '../../helpers';
 import { meltClusterAgent, meltClusterProxy, meltSpore } from '../../api';
 import { getClusterAgentByOutPoint, getClusterProxyByOutPoint, getSporeByOutPoint } from '../../api';
-import { retryQuery, signAndSendTransaction, OutPointRecord } from '../helpers';
+import { retryQuery, signAndOrSendTransaction, OutPointRecord } from '../helpers';
 import { TEST_ENV } from './env';
 
 export const SPORE_OUTPOINT_RECORDS: OutPointRecord[] = [];
@@ -46,7 +46,7 @@ export async function cleanupSporeRecords() {
           config,
         });
 
-        return signAndSendTransaction({
+        return signAndOrSendTransaction({
           account: record.account,
           txSkeleton,
           config,
@@ -80,7 +80,7 @@ export async function cleanupClusterProxyRecords() {
           config,
         });
 
-        return signAndSendTransaction({
+        return signAndOrSendTransaction({
           account: record.account,
           txSkeleton,
           config,
@@ -114,7 +114,7 @@ export async function cleanupClusterAgentRecords() {
           config,
         });
 
-        return signAndSendTransaction({
+        return signAndOrSendTransaction({
           account: record.account,
           txSkeleton,
           config,

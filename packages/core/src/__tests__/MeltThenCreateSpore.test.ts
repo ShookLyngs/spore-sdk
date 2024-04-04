@@ -3,10 +3,18 @@ import { BI } from '@ckb-lumos/lumos';
 import { getSporeScript } from '../config';
 import { unpackToRawMutantArgs } from '../codec';
 import { bufferToRawString, bytifyRawString } from '../helpers';
-import { createSpore, transferSpore, meltSpore, getSporeByOutPoint, getMutantById } from '../api';
-import { expectCellDep, expectTypeId, expectTypeCell, expectCellLock } from './helpers';
-import { getSporeOutput, popRecord, retryQuery, signAndSendTransaction, OutPointRecord } from './helpers';
-import { TEST_ACCOUNTS, TEST_ENV, SPORE_OUTPOINT_RECORDS, cleanupRecords } from './shared';
+import {
+  createSpore,
+  transferSpore,
+  meltSpore,
+  getSporeByOutPoint,
+  getMutantById,
+  createCluster,
+  getClusterByOutPoint,
+} from '../api';
+import { expectCellDep, expectTypeId, expectTypeCell, expectCellLock, getClusterOutput } from './helpers';
+import { getSporeOutput, popRecord, retryQuery, signAndOrSendTransaction, OutPointRecord } from './helpers';
+import { TEST_ACCOUNTS, TEST_ENV, SPORE_OUTPOINT_RECORDS, cleanupRecords, CLUSTER_OUTPOINT_RECORDS } from './shared';
 import { meltThenCreateSpore } from '../api/composed/spore/meltThenCreateSpore';
 
 describe('Spore', () => {
@@ -18,7 +26,6 @@ describe('Spore', () => {
     });
   }, 0);
   describe('Spore basics', () => {
-    let existingSporeRecord: OutPointRecord | undefined;
     it('Create a Spore', async () => {
       const { txSkeleton, outputIndex, reference } = await createSpore({
         data: {
@@ -39,7 +46,7 @@ describe('Spore', () => {
       expect(reference).toBeDefined();
       expect(reference.referenceTarget).toEqual('none');
 
-      const hash = await signAndSendTransaction({
+      const { hash } = await signAndOrSendTransaction({
         account: ALICE,
         txSkeleton,
         config,
@@ -58,14 +65,48 @@ describe('Spore', () => {
       }
     }, 0);
 
+    it('Create a Cluster', async () => {
+      const { txSkeleton, outputIndex } = await createCluster({
+        data: {
+          name: 'dob cluster',
+          description: 'Testing only',
+        },
+        fromInfos: [CHARLIE.address],
+        toLock: CHARLIE.lock,
+        config,
+      });
+
+      const { hash } = await signAndOrSendTransaction({
+        account: CHARLIE,
+        txSkeleton,
+        config,
+        rpc,
+        send: true,
+      });
+      if (hash) {
+        CLUSTER_OUTPOINT_RECORDS.push({
+          outPoint: {
+            txHash: hash,
+            index: BI.from(outputIndex).toHexString(),
+          },
+          account: CHARLIE,
+        });
+      }
+    }, 0);
+
     it('Melt and Create a Spore', async () => {
-      const sporeRecord = existingSporeRecord ?? popRecord(SPORE_OUTPOINT_RECORDS, true);
+      const sporeRecord = popRecord(SPORE_OUTPOINT_RECORDS, true);
       const sporeCell = await retryQuery(() => getSporeByOutPoint(sporeRecord.outPoint, config));
+      const clusterRecord = popRecord(CLUSTER_OUTPOINT_RECORDS, true);
+      const clusterCell = await retryQuery(() => getClusterByOutPoint(clusterRecord.outPoint, config));
+      const clusterId = clusterCell.cellOutput.type!.args;
+
       console.log('old spore cell: ', sporeCell);
       const { txSkeleton, outputIndex } = await meltThenCreateSpore({
         data: {
           contentType: 'text/plain',
           content: bytifyRawString('dob spore'),
+          clusterId,
         },
         toLock: CHARLIE.lock,
         fromInfos: [CHARLIE.address],
@@ -74,8 +115,13 @@ describe('Spore', () => {
         config,
       });
 
-      const aliceSignedTxSkeleton = ALICE.signTransaction(txSkeleton);
-      const hash = await signAndSendTransaction({
+      const { txSkeleton: aliceSignedTxSkeleton } = await signAndOrSendTransaction({
+        account: ALICE,
+        txSkeleton,
+        config,
+        send: false,
+      });
+      const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton: aliceSignedTxSkeleton,
         config,

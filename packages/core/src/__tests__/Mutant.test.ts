@@ -1,7 +1,7 @@
 import { describe, it } from 'vitest';
 import { bufferToRawString } from '../helpers';
 import { createMutant, getMutantById, transferMutant } from '../api';
-import { fetchLocalFile, signAndSendTransaction } from './helpers';
+import { fetchLocalFile, signAndOrSendTransaction } from './helpers';
 import { TEST_ACCOUNTS, TEST_ENV } from './shared';
 
 describe.skip('Mutant', function () {
@@ -44,7 +44,7 @@ describe.skip('Mutant', function () {
     });
 
     // Sign and send transaction
-    await signAndSendTransaction({
+    await signAndOrSendTransaction({
       account: ALICE,
       txSkeleton,
       config,
@@ -67,7 +67,7 @@ describe.skip('Mutant', function () {
     });
 
     // Sign and send transaction
-    await signAndSendTransaction({
+    await signAndOrSendTransaction({
       account: ALICE,
       txSkeleton,
       config,
