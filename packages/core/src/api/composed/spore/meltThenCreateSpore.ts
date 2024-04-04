@@ -104,6 +104,7 @@ export async function meltThenCreateSpore(props: {
     txSkeleton,
     fromInfos: props.fromInfos,
     changeAddress: props.changeAddress,
+    config,
     updateTxSkeletonAfterCollection(_txSkeleton) {
       // Generate and inject SporeID
       _txSkeleton = injectNewSporeIds({
