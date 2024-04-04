@@ -67,7 +67,6 @@ export async function meltThenCreateSpore(props: {
     config,
   });
   txSkeleton = injectLiveSporeCellResult.txSkeleton;
-  // console.log(JSON.stringify(txSkeleton));
 
   /**
    * Create Spore
@@ -120,20 +119,20 @@ export async function meltThenCreateSpore(props: {
       const sporeScript = getSporeScript(config, 'Spore', mintSporeCell.cellOutput.type!);
       if (sporeScript.behaviors?.cobuild) {
         const meltActionResult = generateMeltSporeAction({
-          txSkeleton,
+          txSkeleton: _txSkeleton,
           inputIndex: injectLiveSporeCellResult.inputIndex,
         });
         const mintActionResult = generateCreateSporeAction({
-          txSkeleton,
+          txSkeleton: _txSkeleton,
           reference: injectNewSporeResult.reference,
           outputIndex: injectNewSporeResult.outputIndex,
         });
         const actions = meltActionResult.actions.concat(mintActionResult.actions);
         const injectCobuildProofResult = injectCommonCobuildProof({
-          txSkeleton,
+          txSkeleton: _txSkeleton,
           actions,
         });
-        txSkeleton = injectCobuildProofResult.txSkeleton;
+        _txSkeleton = injectCobuildProofResult.txSkeleton;
       }
 
       return _txSkeleton;

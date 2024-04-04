@@ -91,7 +91,6 @@ describe('Spore', () => {
       const clusterCell = await retryQuery(() => getClusterByOutPoint(clusterRecord.outPoint, config));
       const clusterId = clusterCell.cellOutput.type!.args;
 
-      console.log('old spore cell: ', sporeCell);
       const { txSkeleton, outputIndex } = await meltThenCreateSpore({
         data: {
           contentType: 'text/plain',
@@ -105,14 +104,12 @@ describe('Spore', () => {
         config,
       });
 
-      console.log('skeleton before alice sign: ', txSkeleton);
       const { txSkeleton: aliceSignedTxSkeleton } = await signAndOrSendTransaction({
         account: ALICE,
         txSkeleton,
         config,
         send: false,
       });
-      console.log('skeleton after alice sign: ', txSkeleton);
       const { hash } = await signAndOrSendTransaction({
         account: CHARLIE,
         txSkeleton: aliceSignedTxSkeleton,
