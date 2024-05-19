@@ -363,7 +363,7 @@ export class TraitsBase {
   }
 }
 
-export function deserailizePattern(moleculeLike: Uint8Array | string): TraitsBase {
+export function deserailizePattern(moleculeLike: string | Uint8Array): TraitsBase {
   if (typeof moleculeLike === 'string') {
     if (!moleculeLike.startsWith('0x')) {
       moleculeLike = `0x${moleculeLike}`;
@@ -374,11 +374,14 @@ export function deserailizePattern(moleculeLike: Uint8Array | string): TraitsBas
   return TraitsBase.unpack(traitsBase);
 }
 
-export function serailizePattern(traitsBase: TraitsBase, format?: 'hex'): ArrayBuffer | string {
+export function serailizePattern(traitsBase: TraitsBase): ArrayBuffer;
+export function serailizePattern(traitsBase: TraitsBase, format: 'hex'): string;
+export function serailizePattern(traitsBase: TraitsBase, format?: unknown): unknown {
   const buffer = new Uint8Array(traitsBase.pack().view.buffer);
-  if (format === 'hex') {
-    return bytes.hexify(buffer).substring(2);
-  } else {
-    return buffer;
+  switch (format) {
+    case 'hex':
+      return bytes.hexify(buffer).substring(2);
+    default:
+      return buffer;
   }
 }
