@@ -1,6 +1,6 @@
 import { BIish } from '@ckb-lumos/bi';
 import { Address, Script } from '@ckb-lumos/base';
-import { FromInfo } from '@ckb-lumos/lumos/common-scripts';
+import { FromInfo, parseFromInfo } from '@ckb-lumos/lumos/common-scripts';
 import { BI, Indexer, helpers, Cell, HexString, OutPoint } from '@ckb-lumos/lumos';
 import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
 import {
@@ -14,6 +14,7 @@ import { injectNewSporeOutput, injectNewSporeIds, SporeDataProps, getClusterAgen
 import { generateCreateSporeAction } from '../../../cobuild/action/spore/createSpore';
 import { injectCommonCobuildProof } from '../../../cobuild/base/witnessLayout';
 import { encodeToAddress } from '@ckb-lumos/lumos/helpers';
+import _ from 'lodash';
 
 export async function createSpore(props: {
   data: SporeDataProps;
@@ -251,19 +252,10 @@ export async function createMultipleSpores(props: {
           script: cell.cellOutput.lock,
           customData: cell.data,
         };
-        const addressExists = props.fromInfos.indexOf(address) >= 0;
-        const customScriptExists = props.fromInfos.some(
-          (info) =>
-            typeof info === 'object' &&
-            'script' in info &&
-            'customData' in info &&
-            info.script.codeHash === customScript.script.codeHash &&
-            info.script.hashType === customScript.script.hashType &&
-            info.script.args === customScript.script.args &&
-            info.customData === customScript.customData,
-        );
-        if (!addressExists && !customScriptExists) {
-          props.fromInfos.push(address);
+        for (const fromInfo of props.fromInfos) {
+          if (!_.isEqual(customScript, parseFromInfo(fromInfo))) {
+            props.fromInfos.push(address);
+          }
         }
         inputs = inputs.push(cell);
       }
