@@ -251,7 +251,18 @@ export async function createMultipleSpores(props: {
           script: cell.cellOutput.lock,
           customData: cell.data,
         };
-        if (props.fromInfos.indexOf(address) < 0 && props.fromInfos.indexOf(customScript) < 0) {
+        const addressExists = props.fromInfos.indexOf(address) >= 0;
+        const customScriptExists = props.fromInfos.some(
+          (info) =>
+            typeof info === 'object' &&
+            'script' in info &&
+            'customData' in info &&
+            info.script.codeHash === customScript.script.codeHash &&
+            info.script.hashType === customScript.script.hashType &&
+            info.script.args === customScript.script.args &&
+            info.customData === customScript.customData,
+        );
+        if (!addressExists && !customScriptExists) {
           props.fromInfos.push(address);
         }
         inputs = inputs.push(cell);
