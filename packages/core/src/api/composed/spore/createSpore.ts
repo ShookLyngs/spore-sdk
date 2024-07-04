@@ -252,10 +252,15 @@ export async function createMultipleSpores(props: {
           script: cell.cellOutput.lock,
           customData: cell.data,
         };
-        for (const fromInfo of props.fromInfos) {
-          if (!_.isEqual(customScript, parseFromInfo(fromInfo))) {
-            props.fromInfos.push(address);
-          }
+        const customScriptExists = props.fromInfos.some((fromInfo) => {
+          const parsedInfo = parseFromInfo(fromInfo, { config: config.lumos });
+          return _.isEqual(customScript, {
+            script: parsedInfo.fromScript,
+            customData: parsedInfo.customData,
+          });
+        });
+        if (!customScriptExists) {
+          props.fromInfos.push(address);
         }
         inputs = inputs.push(cell);
       }
