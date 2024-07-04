@@ -68,9 +68,12 @@ export async function createSpore(props: {
       const address = encodeToAddress(cell.cellOutput.lock, { config: config.lumos });
       const customScript = {
         script: cell.cellOutput.lock,
-        customData: cell.data,
       };
-      if (props.fromInfos.indexOf(address) < 0 && props.fromInfos.indexOf(customScript) < 0) {
+      const customScriptExists = props.fromInfos.some((fromInfo) => {
+        const parsedInfo = parseFromInfo(fromInfo, { config: config.lumos });
+        return _.isEqual(customScript, parsedInfo.fromScript);
+      });
+      if (!customScriptExists) {
         props.fromInfos.push(address);
       }
       const setupCellResult = await setupCell({
@@ -250,14 +253,10 @@ export async function createMultipleSpores(props: {
         const address = encodeToAddress(cell.cellOutput.lock, { config: config.lumos });
         const customScript = {
           script: cell.cellOutput.lock,
-          customData: cell.data,
         };
         const customScriptExists = props.fromInfos.some((fromInfo) => {
           const parsedInfo = parseFromInfo(fromInfo, { config: config.lumos });
-          return _.isEqual(customScript, {
-            script: parsedInfo.fromScript,
-            customData: parsedInfo.customData,
-          });
+          return _.isEqual(customScript, parsedInfo.fromScript);
         });
         if (!customScriptExists) {
           props.fromInfos.push(address);
