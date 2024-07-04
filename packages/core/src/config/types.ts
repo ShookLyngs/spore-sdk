@@ -2,6 +2,7 @@ import { Config } from '@ckb-lumos/config-manager';
 import { CellDep } from '@ckb-lumos/base';
 import { ScriptId } from '../types';
 import { ClusterDataVersion } from '../codec';
+import { HexString } from '@ckb-lumos/lumos';
 
 export interface SporeConfig<T extends string = string> {
   lumos: Config;
@@ -24,11 +25,18 @@ export interface SporeVersionedScript extends SporeScript {
 
 export type SporeScripts<T extends string> = Record<T, SporeScript>;
 
+export type DynamicScripts<T extends string> = Record<T, DynamicScript>;
+
 export interface SporeScript {
   tags: string[];
   script: ScriptId;
   cellDep: CellDep;
   behaviors?: SporeScriptBehaviors;
+}
+
+export interface DynamicScript {
+  script: ScriptId;
+  typeid_args: HexString;
 }
 
 export interface SporeScriptBehaviors {

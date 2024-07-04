@@ -1,7 +1,14 @@
 import { predefined } from '@ckb-lumos/config-manager';
-import { SporeConfig } from './types';
+import { DynamicScripts, SporeConfig } from './types';
 
-export type PredefinedTestnetSporeScriptName = 'Spore' | 'Cluster' | 'ClusterProxy' | 'ClusterAgent' | 'Mutant' | 'Lua';
+export type PredefinedTestnetSporeScriptName =
+  | 'Spore'
+  | 'Cluster'
+  | 'ClusterProxy'
+  | 'ClusterAgent'
+  | 'Mutant'
+  | 'Lua'
+  | 'Did';
 
 const TESTNET_SPORE_CONFIG: SporeConfig<PredefinedTestnetSporeScriptName> = {
   lumos: predefined.AGGRON4,
@@ -166,10 +173,13 @@ const TESTNET_SPORE_CONFIG: SporeConfig<PredefinedTestnetSporeScriptName> = {
         },
       ],
     },
+    Did: {
+      versions: [],
+    },
   },
 };
 
-export type PredefinedMainnetSporeScriptName = 'Spore' | 'Cluster';
+export type PredefinedMainnetSporeScriptName = 'Spore' | 'Cluster' | 'Did';
 
 const MAINNET_SPORE_CONFIG: SporeConfig<PredefinedMainnetSporeScriptName> = {
   lumos: predefined.LINA,
@@ -222,6 +232,33 @@ const MAINNET_SPORE_CONFIG: SporeConfig<PredefinedMainnetSporeScriptName> = {
         },
       ],
     },
+    Did: {
+      versions: [],
+    },
+  },
+};
+
+export type predefinedDynamicScriptName = 'Did';
+
+const TESTNET_DYNAMIC_SCRIPTS: DynamicScripts<predefinedDynamicScriptName> = {
+  // see: https://github.com/dotbitHQ/did-contracts/blob/docs/docs/Deployed-Scripts.md#testnet
+  Did: {
+    script: {
+      codeHash: '0x0b1f412fbae26853ff7d082d422c2bdd9e2ff94ee8aaec11240a5b34cc6e890f',
+      hashType: 'type',
+    },
+    typeid_args: '0x80f0d4bf6b3951911aa6b98cc609d477a8a10b903b35cfd528d098e95c36f680',
+  },
+};
+
+const MAINNET_DYNAMIC_SCRIPTS: DynamicScripts<predefinedDynamicScriptName> = {
+  // see: https://github.com/dotbitHQ/did-contracts/blob/docs/docs/Deployed-Scripts.md#mainnet
+  Did: {
+    script: {
+      codeHash: '0xcfba73b58b6f30e70caed8a999748781b164ef9a1e218424a6fb55ebf641cb33',
+      hashType: 'type',
+    },
+    typeid_args: '0x62312cd846659e188b05da11dc3f080b083c27371ea701d6026e11e713e0e3de',
   },
 };
 
@@ -232,4 +269,6 @@ export const predefinedSporeConfigs = {
   Aggron4: TESTNET_SPORE_CONFIG,
   Testnet: TESTNET_SPORE_CONFIG,
   Mainnet: MAINNET_SPORE_CONFIG,
+  TestnetDynamic: TESTNET_DYNAMIC_SCRIPTS,
+  MainnetDynamic: MAINNET_DYNAMIC_SCRIPTS,
 };
