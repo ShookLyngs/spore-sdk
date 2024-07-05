@@ -1,8 +1,14 @@
 import { BIish } from '@ckb-lumos/bi';
 import { PackedSince } from '@ckb-lumos/base';
-import { BI, Cell, helpers, HexString } from '@ckb-lumos/lumos';
+import { BI, Cell, helpers, HexString, Indexer, Script } from '@ckb-lumos/lumos';
 import { addCellDep, parseAddress } from '@ckb-lumos/lumos/helpers';
-import { decodeContentType, isContentTypeValid, setAbsoluteCapacityMargin, setupCell } from '../../../helpers';
+import {
+  decodeContentType,
+  getCellByType,
+  isContentTypeValid,
+  setAbsoluteCapacityMargin,
+  setupCell,
+} from '../../../helpers';
 import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
 import { unpackToRawSporeData } from '../../../codec';
 import { getMutantById } from '../mutant/getMutant';
@@ -68,7 +74,20 @@ export async function injectLiveSporeCell(props: {
   }
 
   // Add Spore script as cellDep
-  txSkeleton = addCellDep(txSkeleton, sporeScript.cellDep);
+  let sporeCelldep = sporeScript.cellDep;
+  if (sporeScript.behaviors?.dynamicCelldep) {
+    const scriptCell = await getCellByType({
+      type: sporeScript.behaviors?.dynamicCelldep,
+      indexer: new Indexer(config.ckbIndexerUrl, config.ckbNodeUrl),
+    });
+    if (scriptCell) {
+      sporeCelldep = {
+        outPoint: scriptCell.outPoint!,
+        depType: 'code',
+      };
+    }
+  }
+  txSkeleton = addCellDep(txSkeleton, sporeCelldep);
 
   // Validate SporeData.contentType
   const sporeData = unpackToRawSporeData(sporeCell.data);

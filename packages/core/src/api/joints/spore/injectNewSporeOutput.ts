@@ -1,11 +1,11 @@
 import { BIish } from '@ckb-lumos/bi';
 import { Script } from '@ckb-lumos/base';
 import { bytes, BytesLike } from '@ckb-lumos/codec';
-import { Address, BI, Cell, Hash, helpers, HexString, PackedSince } from '@ckb-lumos/lumos';
+import { Address, BI, Cell, Hash, helpers, HexString, Indexer, PackedSince } from '@ckb-lumos/lumos';
 import { addCellDep } from '@ckb-lumos/lumos/helpers';
 import { packRawSporeData } from '../../../codec';
 import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
-import { EncodableContentType, setContentTypeParameters } from '../../../helpers';
+import { EncodableContentType, getCellByType, setContentTypeParameters } from '../../../helpers';
 import { correctCellMinimalCapacity, setAbsoluteCapacityMargin } from '../../../helpers';
 import { composeInputLocks, composeOutputLocks, decodeContentType, isContentTypeValid } from '../../../helpers';
 import { getClusterById } from '../cluster/getCluster';
@@ -223,7 +223,20 @@ export async function injectNewSporeOutput(props: {
   }
 
   // Add Spore relevant cellDeps
-  txSkeleton = addCellDep(txSkeleton, sporeScript.cellDep);
+  let sporeCelldep = sporeScript.cellDep;
+  if (sporeScript.behaviors?.dynamicCelldep) {
+    const scriptCell = await getCellByType({
+      type: sporeScript.behaviors?.dynamicCelldep,
+      indexer: new Indexer(config.ckbIndexerUrl, config.ckbNodeUrl),
+    });
+    if (scriptCell) {
+      sporeCelldep = {
+        outPoint: scriptCell.outPoint!,
+        depType: 'code',
+      };
+    }
+  }
+  txSkeleton = addCellDep(txSkeleton, sporeCelldep);
 
   return {
     txSkeleton,

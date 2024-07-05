@@ -1,10 +1,12 @@
 # @spore-sdk/core
 
-## 0.2.0-beta.9
+## 0.2.0
 
 ### Minor Changes
 
 - 9b4983f: export co-build interfaces and able to skip checking content-type
+
+## 0.2.0-beta.9
 
 ### Patch Changes
 

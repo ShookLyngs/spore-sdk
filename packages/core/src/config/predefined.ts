@@ -12,6 +12,29 @@ const TESTNET_SPORE_CONFIG: SporeConfig<PredefinedTestnetSporeScriptName> = {
   scripts: {
     Spore: {
       versions: [
+        // see: https://github.com/dotbitHQ/did-contracts/blob/docs/docs/Deployed-Scripts.md#testnet
+        {
+          tags: ['v2', 'did'],
+          script: {
+            codeHash: '0x0b1f412fbae26853ff7d082d422c2bdd9e2ff94ee8aaec11240a5b34cc6e890f',
+            hashType: 'type',
+          },
+          cellDep: {
+            outPoint: {
+              txHash: '0x29d0123dda05cb92452a46df609e9bd08e066d62f0c3953fe34935dc10edfdcc',
+              index: '0x0',
+            },
+            depType: 'code',
+          },
+          behaviors: {
+            lockProxy: true,
+            dynamicCelldep: {
+              codeHash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
+              hashType: 'type',
+              args: '0x80f0d4bf6b3951911aa6b98cc609d477a8a10b903b35cfd528d098e95c36f680',
+            },
+          },
+        },
         {
           tags: ['v2', 'preview'],
           script: {
@@ -180,6 +203,29 @@ const MAINNET_SPORE_CONFIG: SporeConfig<PredefinedMainnetSporeScriptName> = {
   scripts: {
     Spore: {
       versions: [
+        // see: https://github.com/dotbitHQ/did-contracts/blob/docs/docs/Deployed-Scripts.md#mainnet
+        {
+          tags: ['v2', 'did'],
+          script: {
+            codeHash: '0xcfba73b58b6f30e70caed8a999748781b164ef9a1e218424a6fb55ebf641cb33',
+            hashType: 'type',
+          },
+          cellDep: {
+            outPoint: {
+              txHash: '0x18dda0f02036305b423b85cce276a40417faed044b2ee9220284215f38734daa',
+              index: '0x0',
+            },
+            depType: 'code',
+          },
+          behaviors: {
+            lockProxy: true,
+            dynamicCelldep: {
+              codeHash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
+              hashType: 'type',
+              args: '0x62312cd846659e188b05da11dc3f080b083c27371ea701d6026e11e713e0e3de',
+            },
+          },
+        },
         {
           tags: ['v2', 'latest'],
           script: {

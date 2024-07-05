@@ -1,6 +1,6 @@
 import { BIish } from '@ckb-lumos/bi';
 import { Address, Script } from '@ckb-lumos/base';
-import { FromInfo } from '@ckb-lumos/lumos/common-scripts';
+import { FromInfo, parseFromInfo } from '@ckb-lumos/lumos/common-scripts';
 import { BI, Indexer, helpers, Cell, HexString, OutPoint } from '@ckb-lumos/lumos';
 import { getSporeConfig, getSporeScript, SporeConfig } from '../../../config';
 import {
@@ -14,6 +14,7 @@ import { injectNewSporeOutput, injectNewSporeIds, SporeDataProps, getClusterAgen
 import { generateCreateSporeAction } from '../../../cobuild/action/spore/createSpore';
 import { injectCommonCobuildProof } from '../../../cobuild/base/witnessLayout';
 import { encodeToAddress } from '@ckb-lumos/lumos/helpers';
+import _ from 'lodash';
 
 export async function createSpore(props: {
   data: SporeDataProps;
@@ -67,9 +68,12 @@ export async function createSpore(props: {
       const address = encodeToAddress(cell.cellOutput.lock, { config: config.lumos });
       const customScript = {
         script: cell.cellOutput.lock,
-        customData: cell.data,
       };
-      if (props.fromInfos.indexOf(address) < 0 && props.fromInfos.indexOf(customScript) < 0) {
+      const customScriptExists = props.fromInfos.some((fromInfo) => {
+        const parsedInfo = parseFromInfo(fromInfo, { config: config.lumos });
+        return _.isEqual(customScript, parsedInfo.fromScript);
+      });
+      if (!customScriptExists) {
         props.fromInfos.push(address);
       }
       const setupCellResult = await setupCell({
@@ -249,9 +253,12 @@ export async function createMultipleSpores(props: {
         const address = encodeToAddress(cell.cellOutput.lock, { config: config.lumos });
         const customScript = {
           script: cell.cellOutput.lock,
-          customData: cell.data,
         };
-        if (props.fromInfos.indexOf(address) < 0 && props.fromInfos.indexOf(customScript) < 0) {
+        const customScriptExists = props.fromInfos.some((fromInfo) => {
+          const parsedInfo = parseFromInfo(fromInfo, { config: config.lumos });
+          return _.isEqual(customScript, parsedInfo.fromScript);
+        });
+        if (!customScriptExists) {
           props.fromInfos.push(address);
         }
         inputs = inputs.push(cell);
