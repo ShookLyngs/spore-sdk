@@ -22,7 +22,7 @@ jobs:
           node-version: 18
 
       - uses: pnpm/action-setup@v4
-        name: Install pnpm
+        name: Install -g pnpm
         with:
           version: 9
           run_install: false
