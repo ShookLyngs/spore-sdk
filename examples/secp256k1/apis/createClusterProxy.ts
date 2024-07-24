@@ -15,7 +15,10 @@ import { accounts, config } from '../utils/config';
    * - Cluster ID: 0x928eb52ffeb8864154b2135d57ac57b70d97ba908c5a7205ed5e5dc022468b27
    * - Ownership: CHARLIE
    */
-  const clusterCell = await getClusterById('0x928eb52ffeb8864154b2135d57ac57b70d97ba908c5a7205ed5e5dc022468b27', config);
+  const clusterCell = await getClusterById(
+    '0x928eb52ffeb8864154b2135d57ac57b70d97ba908c5a7205ed5e5dc022468b27',
+    config,
+  );
 
   const { txSkeleton, outputIndex } = await createClusterProxy({
     clusterOutPoint: clusterCell.outPoint!,

@@ -17,7 +17,7 @@ import { createOmnilockAcpArgs } from '../utils/wallet';
   const CharlieOmniAcpLock = CHARLIE.createLock(
     createOmnilockAcpArgs({
       minCkb: 0,
-    })
+    }),
   );
 
   const { txSkeleton, outputIndex } = await createCluster({

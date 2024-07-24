@@ -28,9 +28,7 @@ import { getInfoFromOmnilockArgs } from '../utils/wallet';
        */
       capacityMargin: (clusterCell, margin) => {
         const args = getInfoFromOmnilockArgs(clusterCell.cellOutput.lock.args);
-        const minCkb = args.minCkb !== void 0
-          ? BI.from(10).pow(args.minCkb)
-          : BI.from(0);
+        const minCkb = args.minCkb !== void 0 ? BI.from(10).pow(args.minCkb) : BI.from(0);
 
         return margin.add(minCkb);
       },

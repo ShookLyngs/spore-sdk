@@ -25,9 +25,7 @@ import { accounts, config } from '../utils/config';
        */
       capacityMargin: (clusterCell, margin) => {
         const argsMinCkb = clusterCell.cellOutput.lock.args.slice(42, 2);
-        const minCkb = argsMinCkb.length === 2
-          ? BI.from(10).pow(number.Uint8.unpack(`0x${argsMinCkb}`))
-          : BI.from(0);
+        const minCkb = argsMinCkb.length === 2 ? BI.from(10).pow(number.Uint8.unpack(`0x${argsMinCkb}`)) : BI.from(0);
 
         return margin.add(minCkb);
       },

@@ -1,0 +1,13 @@
+{
+  "name": "@spore-examples/dob",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "lint": "prettier --check '{apis,utils}/**/*.{js,jsx,ts,tsx}'",
+    "lint:fix": "prettier --write '{apis,utils}/**/*.{js,jsx,ts,tsx}'"
+  },
+  "dependencies": {
+    "@spore-sdk/dob": "workspace:^",
+    "ts-node": "^10.9.1"
+  }
+}

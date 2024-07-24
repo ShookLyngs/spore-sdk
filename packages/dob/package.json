@@ -1,0 +1,40 @@
+{
+  "name": "@spore-sdk/dob",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "prettier --check 'src/**/*.{js,jsx,ts,tsx}'",
+    "lint:fix": "prettier --write 'src/**/*.{js,jsx,ts,tsx}'",
+    "clean": "pnpm run clean:cache & pnpm run clean:build",
+    "clean:build": "rimraf lib && pnpm run clean:buildinfo",
+    "clean:buildinfo": "rimraf tsconfig.*tsbuildinfo",
+    "clean:cache": "rimraf .turbo"
+  },
+  "main": "lib",
+  "files": [
+    "lib"
+  ],
+  "peerDependencies": {
+    "@ckb-lumos/lumos": "0.23.0"
+  },
+  "devDependencies": {
+    "@exact-realty/multipart-parser": "^1.0.13",
+    "vitest": "^1.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sporeprotocol/spore-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sporeprotocol/spore-sdk/issues"
+  },
+  "dependencies": {
+    "@spore-sdk/core": "workspace:^",
+    "axios": "^1.7.2"
+  }
+}

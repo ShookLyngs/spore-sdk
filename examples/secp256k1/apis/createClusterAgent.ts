@@ -16,7 +16,10 @@ import { BI } from '@ckb-lumos/bi';
    * - ClusterProxy ID: 0x484a439338ebe0ef6f953ead4273a59fc5972d31e67e7e51e7a9c01af810e857
    * - Ownership: CHARLIE
    */
-  const clusterProxyCell = await getClusterProxyById('0x484a439338ebe0ef6f953ead4273a59fc5972d31e67e7e51e7a9c01af810e857', config);
+  const clusterProxyCell = await getClusterProxyById(
+    '0x484a439338ebe0ef6f953ead4273a59fc5972d31e67e7e51e7a9c01af810e857',
+    config,
+  );
 
   const { txSkeleton, outputIndex } = await createClusterAgent({
     clusterProxyOutPoint: clusterProxyCell.outPoint!,

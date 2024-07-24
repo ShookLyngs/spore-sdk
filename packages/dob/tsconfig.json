@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ESNext",
+    "outDir": "lib",
+    "rootDir": "src",
+    "composite": true,
+    "noEmit": false,
+    "lib": ["ESNext"]
+  },
+  "include": ["src/**/*", "src/index.ts"],
+  "exclude": ["**/lib"]
+}

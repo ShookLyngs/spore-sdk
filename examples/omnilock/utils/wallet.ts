@@ -165,9 +165,7 @@ export function createOmnilockLock(props: { lockAuth: HexString; lockArgs?: HexS
  * Create ACP Omnilock args with minimalCkb and minimalUdt parameters.
  * minCkb: The minimal required digit of payment CKBytes.
  */
-export function createOmnilockAcpArgs(props: {
-  minCkb: number,
-}): HexString {
+export function createOmnilockAcpArgs(props: { minCkb: number }): HexString {
   const minimalCkb = bytes.hexify(number.Uint8.pack(props.minCkb ?? 0));
   return `0x02${removeHexPrefix(minimalCkb)}00`;
 }
