@@ -10,7 +10,11 @@ export function encodeClusterDescriptionForDob0(dob0: Dob0): string {
   dob0.dob.pattern.forEach((v) => {
     checkPatternDob0(v);
     v.toJSON = function () {
-      return [v.traitName, v.dobType, v.dnaOffset, v.dnaLength, v.patternType, v.traitArgs];
+      if (v.traitArgs) {
+        return [v.traitName, v.dobType, v.dnaOffset, v.dnaLength, v.patternType, v.traitArgs];
+      } else {
+        return [v.traitName, v.dobType, v.dnaOffset, v.dnaLength, v.patternType];
+      }
     };
   });
   return JSON.stringify(dob0);
@@ -23,7 +27,11 @@ export function encodeClusterDescriptionForDob1(dob1: Dob1): string {
       if ('dnaOffset' in v) {
         checkPatternDob0(v);
         v.toJSON = function () {
-          return [v.dobType, v.dnaOffset, v.dnaLength, v.traitName, v.patternType, v.traitArgs];
+          if (v.traitArgs) {
+            return [v.traitName, v.dobType, v.dnaOffset, v.dnaLength, v.patternType, v.traitArgs];
+          } else {
+            return [v.traitName, v.dobType, v.dnaOffset, v.dnaLength, v.patternType];
+          }
         };
       } else {
         checkPatternDob1(v);

@@ -21,8 +21,8 @@ const TESTNET_DECODERS = {
     type_script: {
       type: 'type_script',
       script: {
-        codeHash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
-        hashType: 'type',
+        code_hash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
+        hash_type: 'type',
         args: '0x784e32cef202b9d4759ea96e80d806f94051e8069fd34d761f452553700138d7',
       },
     },
@@ -50,8 +50,8 @@ const MAINNET_DECODERS = {
     type_script: {
       type: 'type_script',
       script: {
-        codeHash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
-        hashType: 'type',
+        code_hash: '0x00000000000000000000000000000000000000000000000000545950455f4944',
+        hash_type: 'type',
         args: '0x8892bea4405a1f077921799bc0f4516e0ebaef7aea0dfc6614a8898fb47d5372',
       },
     },

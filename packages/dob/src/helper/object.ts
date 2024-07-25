@@ -1,11 +1,13 @@
-import { Script } from '@ckb-lumos/lumos';
-
 export type DNA = string | { dna: string } | string[];
 
 export interface Decoder {
   type: 'code_hash' | 'type_id' | 'type_script';
   hash?: string; // required if `type` is `code_hash` or `type_id`
-  script?: Script; // required if `type` is `type_script`
+  script?: {
+    code_hash: string;
+    hash_type: string;
+    args: string;
+  }; // required if `type` is `type_script`
 }
 
 export interface PatternElementDob0 {

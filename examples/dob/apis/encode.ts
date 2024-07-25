@@ -73,7 +73,7 @@ import {
       svgFields: 'attributes',
       traitName: '',
       patternType: 'raw',
-      traitArgs: 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200"',
+      traitArgs: "xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 200'",
     },
     {
       imageName: 'IMAGE.0',
@@ -83,11 +83,11 @@ import {
       traitArgs: [
         [
           [0, 1000000],
-          '<image width="300" height="200" href="btcfs://b2f4560f17679d3e3fca66209ac425c660d28a252ef72444c3325c6eb0364393i0" />',
+          "<image width='300' height='200' href='btcfs://b2f4560f17679d3e3fca66209ac425c660d28a252ef72444c3325c6eb0364393i0' />",
         ],
         [
           ['*'],
-          '<image width="300" height="200" btcfs://eb3910b3e32a5ed9460bd0d75168c01ba1b8f00cc0faf83e4d8b67b48ea79676i0 />',
+          "<image width='300' height='200' btcfs://eb3910b3e32a5ed9460bd0d75168c01ba1b8f00cc0faf83e4d8b67b48ea79676i0 />",
         ],
       ],
     },
@@ -97,10 +97,10 @@ import {
       traitName: 'BackgroundColor',
       patternType: 'options',
       traitArgs: [
-        ['red', '<rect width="20" height="20" x="5" y="5" fill="red" />'],
-        ['blud', '<rect width="20" height="20" x="20" y="5" fill="blue" />'],
-        ['green', '<rect width="20" height="20" x="5" y="20" fill="green" />'],
-        [['*'], '<rect width="20" height="20" x="20" y="20" fill="pink" />'],
+        ['red', "<rect width='20' height='20' x='5' y='5' fill='red' />"],
+        ['blud', "<rect width='20' height='20' x='20' y='5' fill='blue' />"],
+        ['green', "<rect width='20' height='20' x='5' y='20' fill='green' />"],
+        [['*'], "<rect width='20' height='20' x='20' y='20' fill='pink' />"],
       ],
     },
     {
@@ -111,9 +111,9 @@ import {
       traitArgs: [
         [
           'hello, world!',
-          '<image width="100" height="100" href="ipfs://QmeQ6TfqzsjJCMtYmpbyZeMxiSzQGc6Aqg6NyJTeLYrrJr" />',
+          "<image width='100' height='100' href='ipfs://QmeQ6TfqzsjJCMtYmpbyZeMxiSzQGc6Aqg6NyJTeLYrrJr' />",
         ],
-        [['*'], '<image width="100" height="100" href="ipfs://QmYiiN8EXxAnyddatCbXRYzwU9wwAjh21ms4KEJodxg8Fo" />'],
+        [['*'], "<image width='100' height='100' href='ipfs://QmYiiN8EXxAnyddatCbXRYzwU9wwAjh21ms4KEJodxg8Fo' />"],
       ],
     },
   ];
