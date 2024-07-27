@@ -5,6 +5,7 @@
     "@spore-sdk/core": "0.1.0"
   },
   "changesets": [
+    "chatty-poems-work",
     "early-snakes-tan",
     "eleven-dots-own",
     "grumpy-schools-learn",

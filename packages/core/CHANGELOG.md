@@ -1,5 +1,11 @@
 # @spore-sdk/core
 
+## 0.3.0-beta.0
+
+### Minor Changes
+
+- cd0f11f: feat: adds transferMultipleSpore and meltMultipleThenCreateSpore
+
 ## 0.2.1
 
 ### Minor Changes
