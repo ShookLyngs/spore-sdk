@@ -6,9 +6,10 @@
     "lint:fix": "prettier --write '{acp,utils}/**/*.{js,jsx,ts,tsx}'"
   },
   "dependencies": {
-    "@spore-sdk/core": "workspace:^",
+    "@ckb-lumos/lumos": "0.24.0-next.1",
     "@spore-examples/shared": "workspace:^",
-    "ts-node": "^10.9.1",
-    "lodash": "^4.17.21"
+    "@spore-sdk/core": "workspace:^",
+    "lodash": "^4.17.21",
+    "ts-node": "^10.9.1"
   }
 }

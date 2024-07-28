@@ -5,5 +5,8 @@
     "lint": "prettier --check '*.{js,jsx,ts,tsx}'",
     "lint:fix": "prettier --write '*.{js,jsx,ts,tsx}'"
   },
-  "main": "index.ts"
+  "main": "index.ts",
+  "dependencies": {
+    "@ckb-lumos/lumos": "0.24.0-next.1"
+  }
 }
