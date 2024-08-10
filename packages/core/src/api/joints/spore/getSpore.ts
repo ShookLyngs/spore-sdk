@@ -63,19 +63,13 @@ export async function getSporeById(id: HexString, config?: SporeConfig): Promise
   // Get SporeType script
   const sporeScript = getSporeScriptCategory(config, 'Spore');
   const scripts = (sporeScript.versions ?? []).map((r) => r.script);
+  const indexer = new Indexer(config.ckbIndexerUrl, config.ckbNodeUrl);
 
   // Search target spore from the latest version to the oldest
   for (const script of scripts) {
-    try {
-      return await getSporeByType(
-        {
-          ...script,
-          args: id,
-        },
-        config,
-      );
-    } catch {
-      // Not found in the script, don't have to do anything
+    const cell = await getCellByType({ type: { ...script, args: id }, indexer });
+    if (cell !== void 0) {
+      return cell;
     }
   }
 
