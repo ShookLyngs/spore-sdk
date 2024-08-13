@@ -2,4 +2,4 @@
 '@spore-sdk/core': patch
 ---
 
-Add JoyId, UtxoGlobal and PrivateKey wallet support
+Add JoyId, UtxoGlobal, Metamask and PrivateKey wallet support
