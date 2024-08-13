@@ -21,8 +21,8 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "vitest": "^1.4.0",
-    "@exact-realty/multipart-parser": "^1.0.13"
+    "@exact-realty/multipart-parser": "^1.0.13",
+    "vitest": "^1.4.0"
   },
   "publishConfig": {
     "access": "public"
@@ -33,5 +33,10 @@
   },
   "bugs": {
     "url": "https://github.com/sporeprotocol/spore-sdk/issues"
+  },
+  "dependencies": {
+    "@ckb-ccc/core": "0.0.11-alpha.3",
+    "@ckb-ccc/joy-id": "0.0.11-alpha.3",
+    "@ckb-ccc/utxo-global": "0.0.11-alpha.3"
   }
 }
