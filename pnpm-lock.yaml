@@ -96,6 +96,9 @@ importers:
       '@ckb-ccc/core':
         specifier: 0.0.11-alpha.3
         version: 0.0.11-alpha.3(typescript@5.3.2)
+      '@ckb-ccc/eip6963':
+        specifier: 0.0.11-alpha.3
+        version: 0.0.11-alpha.3(typescript@5.3.2)
       '@ckb-ccc/joy-id':
         specifier: 0.0.11-alpha.3
         version: 0.0.11-alpha.3(typescript@5.3.2)
@@ -349,6 +352,18 @@ packages:
       buffer: 6.0.3
       cross-fetch: 4.0.0
       ethers: 6.13.2
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
+
+  /@ckb-ccc/eip6963@0.0.11-alpha.3(typescript@5.3.2):
+    resolution: {integrity: sha512-sP6l938c6rgooYKX80oBBR9xTJaJMRTrkyziXKQijNWTeGM7iq9mjDjDkzWj4oYK5yvitUwEMByzG6IeeDWmMg==}
+    dependencies:
+      '@ckb-ccc/core': 0.0.11-alpha.3(typescript@5.3.2)
     transitivePeerDependencies:
       - bufferutil
       - encoding

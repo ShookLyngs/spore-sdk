@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@ckb-ccc/core": "0.0.11-alpha.3",
+    "@ckb-ccc/eip6963": "0.0.11-alpha.3",
     "@ckb-ccc/joy-id": "0.0.11-alpha.3",
     "@ckb-ccc/utxo-global": "0.0.11-alpha.3"
   }

@@ -67,7 +67,8 @@ export * from './joints/mutant/getMutant';
  * Signers
  */
 
+export * from './signers/abstract';
 export * from './signers/joyId';
 export * from './signers/privkey';
 export * from './signers/utxoGlobal';
-// TODO: Metamask Support
+export * from './signers/eip6963';

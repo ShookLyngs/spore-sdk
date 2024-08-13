@@ -1,14 +1,15 @@
 import { ccc } from '@ckb-ccc/core';
 import { JoyId } from '@ckb-ccc/joy-id';
 import { helpers } from '@ckb-lumos/lumos';
+import { signTransaction } from './abstract';
 
 let mainnetJoyIdSigner: JoyId.CkbSigner | undefined = undefined;
 let testnetJoyIdSigner: JoyId.CkbSigner | undefined = undefined;
 
 export interface SignerInfo {
   network: 'mainnet' | 'testnet';
-  name: string;
-  url: string;
+  appName: string;
+  logoUrl: string;
 }
 
 /**
@@ -23,14 +24,14 @@ export function getJoyIdSigner(signerInfo: SignerInfo): JoyId.CkbSigner {
       return mainnetJoyIdSigner;
     }
     const client = new ccc.ClientPublicMainnet();
-    mainnetJoyIdSigner = new JoyId.CkbSigner(client, signerInfo.name, signerInfo.url);
+    mainnetJoyIdSigner = new JoyId.CkbSigner(client, signerInfo.appName, signerInfo.logoUrl);
     return mainnetJoyIdSigner;
   } else {
     if (testnetJoyIdSigner) {
       return testnetJoyIdSigner;
     }
     const client = new ccc.ClientPublicTestnet();
-    testnetJoyIdSigner = new JoyId.CkbSigner(client, signerInfo.name, signerInfo.url);
+    testnetJoyIdSigner = new JoyId.CkbSigner(client, signerInfo.appName, signerInfo.logoUrl);
     return testnetJoyIdSigner;
   }
 }
@@ -56,16 +57,5 @@ export async function signTransactionWithJoyId(props: {
   if (!signer.isConnected()) {
     await signer.connect();
   }
-  const tx = ccc.Transaction.fromLumosSkeleton(props.skeleton);
-  const signedTx = await signer.signTransaction(tx);
-
-  let txHash: ccc.Hex | undefined = undefined;
-  if (send) {
-    txHash = await signer.client.sendTransaction(signedTx);
-  }
-
-  return {
-    cccTx: signedTx,
-    txHash,
-  };
+  return await signTransaction({ skeleton: props.skeleton, signer, send });
 }

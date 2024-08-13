@@ -2,6 +2,7 @@ import { helpers } from '@ckb-lumos/lumos';
 import { ccc } from '@ckb-ccc/core';
 import { UtxoGlobal } from '@ckb-ccc/utxo-global';
 import { Provider } from '@ckb-ccc/utxo-global/src/advancedBarrel';
+import { signTransaction } from './abstract';
 
 let mainnetUtxoGlobalSigner: UtxoGlobal.SignerCkb | undefined = undefined;
 let testnetUtxoGlobalSigner: UtxoGlobal.SignerCkb | undefined = undefined;
@@ -55,23 +56,12 @@ export async function signTransactionWithUtxoGlobal(props: {
   send?: boolean;
 }): Promise<{
   cccTx: ccc.Transaction;
-  txHash: ccc.Hex;
+  txHash?: ccc.Hex;
 }> {
   const send = props.send ?? false;
   const signer = getUtxoGlobalSigner(props.network);
   if (!signer.isConnected()) {
     await signer.connect();
   }
-  const tx = ccc.Transaction.fromLumosSkeleton(props.skeleton);
-  const signedTx = await signer.signTransaction(tx);
-
-  let txHash: ccc.Hex | undefined = undefined;
-  if (send) {
-    txHash = await signer.client.sendTransaction(signedTx);
-  }
-
-  return {
-    cccTx: signedTx,
-    txHash: txHash!,
-  };
+  return await signTransaction({ skeleton: props.skeleton, signer, send });
 }
