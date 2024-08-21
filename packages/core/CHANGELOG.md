@@ -1,5 +1,11 @@
 # @spore-sdk/core
 
+## 0.2.2-beta.0
+
+### Patch Changes
+
+- cfaef44: fix vulnerability in getSporeById interface
+
 ## 0.2.1
 
 ### Minor Changes

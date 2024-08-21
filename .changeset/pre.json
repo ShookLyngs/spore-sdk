@@ -2,7 +2,8 @@
   "mode": "pre",
   "tag": "beta",
   "initialVersions": {
-    "@spore-sdk/core": "0.1.0"
+    "@spore-sdk/core": "0.1.0",
+    "@spore-sdk/dob": "0.1.0"
   },
   "changesets": [
     "early-snakes-tan",
@@ -12,6 +13,7 @@
     "honest-rice-vanish",
     "itchy-goats-beam",
     "itchy-plants-kick",
+    "khaki-elephants-behave",
     "kind-donkeys-lick",
     "long-lobsters-walk",
     "nine-bottles-report",
