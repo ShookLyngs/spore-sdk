@@ -1,8 +1,8 @@
 {
   "mode": "pre",
-  "tag": "beta",
+  "tag": "alpha",
   "initialVersions": {
-    "@spore-sdk/core": "0.1.0"
+    "@spore-sdk/core": "0.2.1"
   },
   "changesets": [
     "early-snakes-tan",
@@ -12,11 +12,13 @@
     "honest-rice-vanish",
     "itchy-goats-beam",
     "itchy-plants-kick",
+    "khaki-elephants-behave",
     "kind-donkeys-lick",
     "long-lobsters-walk",
     "nine-bottles-report",
     "old-oranges-invite",
     "polite-donuts-begin",
+    "poor-pumpkins-learn",
     "pretty-lobsters-count",
     "proud-phones-camp",
     "rare-coins-notice",

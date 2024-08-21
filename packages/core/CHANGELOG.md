@@ -1,5 +1,12 @@
 # @spore-sdk/core
 
+## 0.2.2-alpha.0
+
+### Patch Changes
+
+- cfaef44: fix vulnerability in getSporeById interface
+- fix: injectNeededCapacity rare border capacity issue (#133)
+
 ## 0.2.1
 
 ### Minor Changes
