@@ -170,23 +170,23 @@ export function calculateNeededCapacity(props: {
   let txSkeleton = props.txSkeleton;
 
   const snapshot = createCapacitySnapshotFromTransactionSkeleton(txSkeleton);
-  const changeLock = helpers.parseAddress(props.changeAddress, { config: props.config });
+  // const changeLock = helpers.parseAddress(props.changeAddress, { config: props.config });
 
   const extraCapacity = BI.from(props.extraCapacity ?? 0);
-  const minChangeCapacity = minimalCellCapacityByLock(changeLock).add(extraCapacity);
+  // const minChangeCapacity = minimalCellCapacityByLock(changeLock).add(extraCapacity);
 
   let exceedCapacity = snapshot.inputsRemainCapacity;
   let neededCapacity = snapshot.outputsRemainCapacity.add(extraCapacity);
 
-  // Collect one more cell if:
-  // 1. Has sufficient capacity for transaction construction
-  // 2. Has insufficient capacity for adding a change cell to Transaction.outputs
-  const sufficientForTransaction = neededCapacity.lte(0) && exceedCapacity.gt(0);
-  const insufficientForChangeCell = exceedCapacity.lt(minChangeCapacity);
-  if (sufficientForTransaction && insufficientForChangeCell) {
-    neededCapacity = minChangeCapacity;
-    exceedCapacity = BI.from(0);
-  }
+  // // Collect one more cell if:
+  // // 1. Has sufficient capacity for transaction construction
+  // // 2. Has insufficient capacity for adding a change cell to Transaction.outputs
+  // const sufficientForTransaction = neededCapacity.lte(0) && exceedCapacity.gt(0);
+  // const insufficientForChangeCell = exceedCapacity.lt(minChangeCapacity);
+  // if (sufficientForTransaction && insufficientForChangeCell) {
+  //   neededCapacity = minChangeCapacity.sub(exceedCapacity);
+  //   exceedCapacity = BI.from(0);
+  // }
 
   if (neededCapacity.lt(0)) {
     neededCapacity = BI.from(0);
@@ -213,7 +213,6 @@ export async function injectNeededCapacity(props: {
   config?: Config;
   extraCapacity?: BIish;
   changeAddress?: Address;
-  enableDeductCapacity?: boolean;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
   before: CapacitySnapshot;
@@ -244,7 +243,7 @@ export async function injectNeededCapacity(props: {
       props.changeAddress,
       void 0,
       {
-        enableDeductCapacity: props.enableDeductCapacity,
+        enableDeductCapacity: true, // Set adding extra capacity to the last output cell as a default option
         config: props.config,
       },
     );

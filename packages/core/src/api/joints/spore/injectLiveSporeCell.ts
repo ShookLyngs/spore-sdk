@@ -48,11 +48,13 @@ export async function injectLiveSporeCell(props: {
     input: sporeCell,
     addOutput: props.addOutput,
     updateOutput(cell) {
-      if (props.capacityMargin !== void 0) {
-        cell = setAbsoluteCapacityMargin(cell, props.capacityMargin);
-      }
+      // May contain code about changing scripts, which causes the change of cell's occupied capacity,
+      // so here should be processed at first
       if (props.updateOutput instanceof Function) {
         cell = props.updateOutput(cell);
+      }
+      if (props.capacityMargin !== void 0) {
+        cell = setAbsoluteCapacityMargin(cell, props.capacityMargin);
       }
       return cell;
     },

@@ -3,9 +3,10 @@ import { Address, Transaction } from '@ckb-lumos/base';
 import { BI, Header, helpers, RPC } from '@ckb-lumos/lumos';
 import { BIish } from '@ckb-lumos/bi';
 import { getSporeConfig, SporeConfig } from '../config';
-import { injectNeededCapacity, returnExceededCapacity } from './capacity';
+import { injectNeededCapacity, minimalCellCapacityByLock, returnExceededCapacity } from './capacity';
 import { CapacitySnapshot, createCapacitySnapshotFromTransactionSkeleton } from './capacity';
 import { getTransactionSize, getTransactionSkeletonSize } from './transaction';
+import { fromInfoToAddress } from './address';
 
 /**
  * Get minimal acceptable fee rate from RPC.
@@ -154,7 +155,6 @@ export async function injectCapacityAndPayFee(props: {
   feeRate?: BIish;
   extraCapacity?: BIish;
   changeAddress?: Address;
-  enableDeductCapacity?: boolean;
   updateTxSkeletonAfterCollection?: (
     txSkeleton: helpers.TransactionSkeletonType,
   ) => Promise<helpers.TransactionSkeletonType> | helpers.TransactionSkeletonType;
@@ -165,6 +165,19 @@ export async function injectCapacityAndPayFee(props: {
 }> {
   // Env
   const config = props.config ?? getSporeConfig();
+
+  // Add a new change cell for receiving change capacity as default
+  const changeAddress = fromInfoToAddress(props.changeAddress ?? props.fromInfos[0], config.lumos);
+  const changeLock = helpers.addressToScript(changeAddress, { config: config.lumos });
+  props.txSkeleton = props.txSkeleton.update('outputs', (outputs) => {
+    return outputs.push({
+      cellOutput: {
+        capacity: minimalCellCapacityByLock(changeLock).toHexString(),
+        lock: changeLock,
+      },
+      data: '0x',
+    });
+  });
 
   // Collect capacity
   const injectNeededCapacityResult = await injectNeededCapacity({
