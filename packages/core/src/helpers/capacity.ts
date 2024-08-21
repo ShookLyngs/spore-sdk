@@ -6,6 +6,7 @@ import { Address, Script, Cell } from '@ckb-lumos/base/lib';
 import { common, FromInfo } from '@ckb-lumos/common-scripts/lib';
 import { fromInfoToAddress } from './address';
 import { isScriptValueEquals } from './script';
+import {} from '@ckb-lumos/lumos/helpers';
 
 /**
  * Calculate target cell's minimal occupied capacity by lock script.
@@ -166,6 +167,7 @@ export function calculateNeededCapacity(props: {
   snapshot: CapacitySnapshot;
   neededCapacity: BI;
   exceedCapacity: BI;
+  add_minimal_change_cell: boolean;
 } {
   let txSkeleton = props.txSkeleton;
 
@@ -177,6 +179,7 @@ export function calculateNeededCapacity(props: {
 
   let exceedCapacity = snapshot.inputsRemainCapacity;
   let neededCapacity = snapshot.outputsRemainCapacity.add(extraCapacity);
+  let add_minimal_change_cell = false;
 
   // Collect one more cell if:
   // 1. Has sufficient capacity for transaction construction
@@ -184,8 +187,9 @@ export function calculateNeededCapacity(props: {
   const sufficientForTransaction = neededCapacity.lte(0) && exceedCapacity.gt(0);
   const insufficientForChangeCell = exceedCapacity.lt(minChangeCapacity);
   if (sufficientForTransaction && insufficientForChangeCell) {
-    neededCapacity = minChangeCapacity;
+    neededCapacity = minChangeCapacity.sub(exceedCapacity);
     exceedCapacity = BI.from(0);
+    add_minimal_change_cell = true;
   }
 
   if (neededCapacity.lt(0)) {
@@ -199,6 +203,7 @@ export function calculateNeededCapacity(props: {
     snapshot,
     neededCapacity,
     exceedCapacity,
+    add_minimal_change_cell,
   };
 }
 
@@ -234,6 +239,24 @@ export async function injectNeededCapacity(props: {
 
   const before: CapacitySnapshot = calculated.snapshot;
   let after: CapacitySnapshot | undefined;
+  let enableDeductCapacity = props.enableDeductCapacity;
+
+  // If the exceeded capaicty cannot cover the new minimal change cell, we need to add one more cell to collect
+  // the new more needed capacity
+  if (calculated.add_minimal_change_cell) {
+    txSkeleton = txSkeleton.update('outputs', (outputs) => {
+      let changeLock = helpers.parseAddress(changeAddress, { config });
+      const minimalChangeCell: Cell = {
+        cellOutput: {
+          capacity: minimalCellCapacityByLock(changeLock).toHexString(),
+          lock: changeLock,
+        },
+        data: '0x',
+      };
+      return outputs.push(minimalChangeCell);
+    });
+    enableDeductCapacity = true;
+  }
 
   // Collect needed capacity using `common.injectCapacity` API from lumos
   if (calculated.neededCapacity.gt(0)) {
@@ -244,7 +267,7 @@ export async function injectNeededCapacity(props: {
       props.changeAddress,
       void 0,
       {
-        enableDeductCapacity: props.enableDeductCapacity,
+        enableDeductCapacity,
         config: props.config,
       },
     );
