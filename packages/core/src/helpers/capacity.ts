@@ -6,7 +6,6 @@ import { Address, Script, Cell } from '@ckb-lumos/base/lib';
 import { common, FromInfo } from '@ckb-lumos/common-scripts/lib';
 import { fromInfoToAddress } from './address';
 import { isScriptValueEquals } from './script';
-import {} from '@ckb-lumos/lumos/helpers';
 
 /**
  * Calculate target cell's minimal occupied capacity by lock script.
@@ -352,9 +351,6 @@ export function returnExceededCapacity(props: {
     };
     const minimalCapacity = helpers.minimalCellCapacityCompatible(changeCell);
     if (snapshot.inputsRemainCapacity.lt(minimalCapacity)) {
-      console.warn(
-        "The change cell's capacity is less than the minimal capacity, it may cause a failure in the future",
-      );
       unreturnedCapacity = snapshot.inputsRemainCapacity;
     } else {
       createdChangeCell = true;
