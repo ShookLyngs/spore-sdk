@@ -81,6 +81,7 @@ export async function transferMutant(props: {
     // Pay fee by the target cell's capacity margin
     txSkeleton = await payFeeByOutput({
       outputIndex: injectLiveMutantCellResult.outputIndex,
+      feeRate: props.feeRate,
       txSkeleton,
       config,
     });
