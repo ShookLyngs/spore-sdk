@@ -108,6 +108,7 @@ export async function transferCluster(props: {
     // Pay fee by the cluster cell's capacity margin
     txSkeleton = await payFeeByOutput({
       outputIndex: injectLiveClusterCellResult.outputIndex,
+      feeRate: props.feeRate,
       txSkeleton,
       config,
     });

@@ -107,6 +107,7 @@ export async function transferSpore(props: {
     // Pay fee by the spore cell's capacity margin
     txSkeleton = await payFeeByOutput({
       outputIndex: injectLiveSporeCellResult.outputIndex,
+      feeRate: props.feeRate,
       txSkeleton,
       config,
     });
@@ -229,6 +230,7 @@ export async function transferMultipleSpore(props: {
       try {
         const tkSkeletonNew = await payFeeByOutput({
           outputIndex: item.outputIndex,
+          feeRate: props.feeRate,
           txSkeleton,
           config,
         });
