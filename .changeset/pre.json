@@ -5,6 +5,7 @@
     "@spore-sdk/core": "0.2.1"
   },
   "changesets": [
+    "beige-penguins-melt",
     "early-snakes-tan",
     "eleven-dots-own",
     "grumpy-schools-learn",
