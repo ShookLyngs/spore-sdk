@@ -1,5 +1,11 @@
 # @spore-sdk/core
 
+## 0.2.2-alpha.2
+
+### Patch Changes
+
+- ef58c00: add feerate to createMultipleSpores
+
 ## 0.2.2-alpha.1
 
 ### Patch Changes
