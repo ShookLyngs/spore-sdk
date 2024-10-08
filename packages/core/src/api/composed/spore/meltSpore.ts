@@ -1,3 +1,4 @@
+import { BIish } from '@ckb-lumos/bi';
 import { Address, OutPoint } from '@ckb-lumos/base';
 import { Indexer, helpers, HexString, PackedSince } from '@ckb-lumos/lumos';
 import { returnExceededCapacityAndPayFee } from '../../../helpers';
@@ -12,6 +13,7 @@ export async function meltSpore(props: {
   defaultWitness?: HexString;
   since?: PackedSince;
   config?: SporeConfig;
+  feeRate?: BIish | undefined;
 }): Promise<{
   txSkeleton: helpers.TransactionSkeletonType;
   inputIndex: number;
@@ -57,6 +59,7 @@ export async function meltSpore(props: {
     changeAddress: props.changeAddress ?? sporeAddress,
     txSkeleton,
     config,
+    feeRate: props.feeRate,
   });
   txSkeleton = returnExceededCapacityAndPayFeeResult.txSkeleton;
 
